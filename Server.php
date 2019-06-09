@@ -61,6 +61,7 @@ final class Server
 			$this->scrapeNextPost();
 			$this->scrapeNextUser();
 // 			$this->scrapeNextGeotag();
+			$this->scrapeRevealEasy();
 			
 			$this->recalculateStats();
 
@@ -185,6 +186,21 @@ final class Server
 		{
 			Geotag::make()->scrapeGeotag($post);
 		}
+	}
+	
+	/**
+	 * Assign meanwhile known OPs.
+	 */
+	public function scrapeRevealEasy()
+	{
+		$table = NG_Post::table();
+		$query = $table->update();
+		$query->set("ngp_uid = IF( (SELECT ngu_id FROM ng_user WHERE ngu_uid = ngp_uid), NULL, ngp_uid )");
+		$query->set("ngp_creator = IFNULL ( (SELECT ngp_id FROM ng_user WHERE ngu_uid = ngp_uid), NULL )");
+		$query->where("ngp_uid IS NOT NULL");
+		$query->exec();
+		$count = Database::instance()->affectedRows();
+		Logger::logCron("Found $count hidden ops.");
 	}
 	
 	/**

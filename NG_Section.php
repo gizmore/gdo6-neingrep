@@ -80,7 +80,7 @@ final class NG_Section extends GDO
 		{
 			self::$ALL_CACHE = self::table()->select('ngs_name, ngs_title')->order('ngs_title')->exec()->fetchAllArray2dPair();
 			uasort(self::$ALL_CACHE, function($a, $b){
-				return strcasecmp($a->getTitle(), $b->getTitle());
+				return strcasecmp($a, $b);
 			});
 		}
 		return self::$ALL_CACHE;

@@ -120,7 +120,7 @@ final class Post extends Scraper
 		
 		if (!$post->getVar('ngp_creator'))
 		{
-			Logger::logCron("Checking hidden OPID...");
+			Logger::logCron("Checking hidden OPID {$opid}...");
 			if ($op = NG_User::getBy('ngu_uid', $opid))
 			{
 				$revealed = !NG_PostCommented::hasCommented($op, $post);
