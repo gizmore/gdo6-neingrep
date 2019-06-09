@@ -24,7 +24,6 @@ final class NG_PostCommented extends GDO
 	{
 		if (!(self::getById($user->getID(), $post->getID())))
 		{
-			Logger::logCron("A user commented on a post");
 			self::blank(array(
 				'ngpc_user' => $user->getID(),
 				'ngpc_post' => $post->getID(),

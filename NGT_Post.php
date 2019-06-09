@@ -24,6 +24,6 @@ final class NGT_Post extends GDT_Object
 	public function renderCell()
 	{
 		$post = $this->getPost();
-		return GDT_Link::make()->href(Scraper::make()->neinURL()."gag/".$post->getPostID())->rawLabel($post->getPostID())->renderCell();
+		return GDT_Link::make()->targetBlank()->href(Scraper::make()->neinURL()."gag/".$post->getPostID())->rawLabel($post->getPostID())->renderCell();
 	}
 }

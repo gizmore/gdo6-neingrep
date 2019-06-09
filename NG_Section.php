@@ -10,7 +10,7 @@ use GDO\Core\Logger;
 
 final class NG_Section extends GDO
 {
-	public function gdoCached() { return false; }
+	public function gdoCached() { return true; }
 	
 	public function gdoColumns()
 	{
@@ -32,7 +32,8 @@ final class NG_Section extends GDO
 	##############
 	public function displayTitle() { return html($this->getVar('ngs_title')); }
 	public function renderCell() { return $this->displayTitle(); }
-
+	public function renderChoice() { return $this->displayTitle(); }
+	
 	##############
 	### Static ###
 	##############
@@ -65,6 +66,19 @@ final class NG_Section extends GDO
 			'ngs_name' => $name,
 			'ngs_title' => $title,
 		))->insert();
+	}
+	
+	#############
+	### Cache ###
+	#############
+	private static $ALL_CACHE = null;
+	public static function allSections()
+	{
+		if (self::$ALL_CACHE === null)
+		{
+			self::$ALL_CACHE = self::table()->select('ngs_name, ngs_title')->order('ngs_title')->exec()->fetchAllArray2dPair();
+		}
+		return self::$ALL_CACHE;
 	}
 	
 }

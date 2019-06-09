@@ -93,6 +93,9 @@ final class Server
 		$query->order('ngs_scraped');
 		$cut = Time::getDate(time() - $this->scrapeSectionTimeout());
 		$query->where("ngs_scraped IS NULL OR ngs_scraped < '$cut'");
+		$banned_sections = join(', ', Module_NeinGrep::instance()->cfgBannedSections());
+		$query->where("ngs_id NOT IN ($banned_sections)");
+		$query->debug();
 		$query->first();
 		if ($section = $query->exec()->fetchObject())
 		{

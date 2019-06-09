@@ -20,8 +20,9 @@ final class Posts extends MethodQueryTable
 		$table = NG_Post::table();
 		return array(
 			NGT_Post::make(),
-			NGT_User::make(),
-			NGT_Section::make(),
+			NGT_User::make('ngu_name'),
+			NGT_Section::make('ngs_name'),
+			$table->gdoColumn('ngp_created'),
 			$table->gdoColumn('ngp_upvotes'),
 			$table->gdoColumn('ngp_comments'),
 			$table->gdoColumn('ngp_downvotes'),
@@ -31,6 +32,6 @@ final class Posts extends MethodQueryTable
 	
 	public function getQuery()
 	{
-		return NG_Post::table()->select();
+		return NG_Post::table()->select()->joinObject('ngp_creator', 'LEFT JOIN')->joinObject('ngp_section');
 	}
 }

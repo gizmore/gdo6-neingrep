@@ -64,13 +64,13 @@ final class Post extends Scraper
 		
 		$ref = null;
 		
-		foreach ($p['comments'] as $comment)
+		foreach ($p['comments'] as $commentData)
 		{
-			$ref = $comment['orderKey'];
-			$comment_id = $comment['commentId'];
-			$message = $comment['text'];
+			$ref = $commentData['orderKey'];
+			$comment_id = $commentData['commentId'];
+			$message = $commentData['text'];
 			
-			$userdata = $comment['user'];
+			$userdata = $commentData['user'];
 			$username = $userdata['displayName'];
 			$user = NG_User::getOrCreate(array(
 				'username' => $username,
@@ -79,8 +79,8 @@ final class Post extends Scraper
 
 			if (!($comment = NG_Comment::getBy('ngc_cid', $comment_id)))
 			{
-				Logger::logCron("New comment by {$user->displayName()} on {$post->displayTitle()}: {$message}");
-				NG_PostCommented::commented($user, $post, $comment['timestamp']);
+				Logger::logCron("New comment by {$user->displayName()} on {$post->getTitle()}: {$message}");
+				NG_PostCommented::commented($user, $post, $commentData['timestamp']);
 				$comment = NG_Comment::blank(array(
 					'ngc_cid' => $comment_id,
 					'ngc_user' => $user->getID(),
@@ -94,8 +94,8 @@ final class Post extends Scraper
 			else
 			{
 				$comment->saveVars(array(
-					'ngc_likes' => $comment['likeCount'],
-					'ngc_dislikes' => $comment['dislikeCount'],
+					'ngc_likes' => $commentData['likeCount'],
+					'ngc_dislikes' => $commentData['dislikeCount'],
 				), true, $worthy);
 				
 				if (!$worthy)

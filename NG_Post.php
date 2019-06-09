@@ -21,7 +21,7 @@ final class NG_Post extends GDO
 			GDT_String::make('ngp_nid')->max(16)->caseS(),
 			GDT_Object::make('ngp_section')->table(NG_Section::table()),
 			GDT_Object::make('ngp_creator')->table(NG_User::table()),
-			GDT_String::make('ngp_title')->binary()->caseS(),
+			GDT_String::make('ngp_title')->binary()->caseS()->max(1024),
 			GDT_DateTime::make('ngp_created'),
 			GDT_DateTime::make('ngp_scraped'),
 			GDT_Checkbox::make('ngp_nsfw'),

@@ -30,7 +30,7 @@ final class NGT_User extends GDT_Object
 	{
 		if ($user = $this->getUser())
 		{
-			return GDT_Link::make()->href(Scraper::make()->neinURL()."u/".$user->getName())->rawLabel($user->displayName())->renderCell();
+			return GDT_Link::make()->targetBlank()->href(Scraper::make()->neinURL()."u/".$user->getName())->rawLabel($user->displayName())->renderCell();
 		}
 		return t('unknown');
 	}
