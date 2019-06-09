@@ -7,8 +7,8 @@ use GDO\Core\Logger;
 use GDO\Date\Time;
 use GDO\Net\HTTP;
 use GDO\NeinGrep\NG_User;
-use GDO\NeinGrep\NG_PostCommented;
 use GDO\NeinGrep\NG_Comment;
+use GDO\NeinGrep\NG_UserSectionStats;
 
 /**
  * Scrape the comments of a post to reveal new users.
@@ -21,10 +21,7 @@ final class Post extends Scraper
 	public function scrapePost(NG_Post $post)
 	{
 		Logger::logCron("Scraping post {$post->getPostID()} {$post->getTitle()}");
-// 		if ($post->getCommentCount())
-		{
-			$this->scrapePostComments($post);
-		}
+		$this->scrapePostComments($post);
 		$post->saveVar('ngp_scraped', Time::getDate());
 	}
 	
@@ -45,7 +42,8 @@ final class Post extends Scraper
 		}
 // 		$postData['auth'] = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE1NjAwNTU1ODgsIm5iZiI6MTU2MDA1NTI4OCwiZXhwIjoxNTYwMDk4Nzg4LCJwcml2YXRlIjoicDRRdXBXeCtsUGYwOUJCQW9WWG5QZz09LnFPZ0hGOVFacU5HSkYyWnRYNWpLTUFyaGdEenUxbG1aellzZDVJRTRneTluT1FJenFEVTFER3p4TmFMRWVqeU5qa1F3aFM5eDJGdW9IbkV5TVJFK3lNeFBNeW54NkNJWmthZkRYRWlsWUc1d0Q3TU9XVU9tSWlEaXl2dmtxNElrZkV1dGt0SkQ3WHpmdWx1K0VkYTNmcUZLdzE0SktuNVdsWWVSYWxrVW55YmFaQmk4UmJHeEc2WitPc3hXaXJpeEpsRzY1UUs1bm5LcmtBeXBEQng0djVjRlZiYVBMNWQ4eEdYcXRaY0h4dVdaTmxaeUltcFF3U2tXM0lycHFYenJBV0IzMHJQWGpWejVlQ0k4SnpwRXNoUXZWM0dcL0lKOEtuQ3FZekVMaGRGSFNzZVJEaTdIOEhqQmZtYTJBaGlSUWZiaFwvSE0ya2YwVXF2dFVvWDBObE9XMFJcL2lpY2w0QmxKMHNrcDJPMzNmQ0NjdG5KdjE0RXRYcjhKWjVTZXdJQ3lRT3RXK0ZJMEVXcTBFZEZZd0xmZ01LbllQSmU0QncwNVBSOENSUkd1OUpHb052dmUxaEd0SVkwXC82ejd0ZmNlIn0.cCgVmffgoihzKdBDh6y07RkeFzFtKIulaAMfhUECCeA';
 		$postData['origin'] = "https://9gag.com";
-		Logger::logCron("Scraping Post comments {$post->getPostID()} by {$post->getVar('ngp_creator')} - REF {$ref}");
+		$username = $post->getVar('ngp_creator') ? $post->getUser()->getName() : 'unknown';
+		Logger::logCron("Scraping Post comments {$post->getPostID()} by {$username} - REF {$ref}");
 		$this->beforeRequest();
 		$url .= "?";
 		$url .= http_build_query($postData);
@@ -56,16 +54,15 @@ final class Post extends Scraper
 		
 		$nComments = count($json['payload']['comments']);
 		Logger::logCron("Got {$nComments} comments.");
-		$this->sleep();
 		
 		$p = $json['payload'];
 		$total = $p['total'];
-		$opid = $p['opUserId'];
-		
-		if (!$opid)
+		$opid = (string)$p['opUserId'];
+		if (!preg_match("#^u_\\d{4,20}$#D", $opid))
 		{
-			Logger::logCron("Error: Hidden reveal does not work!");
+			Logger::logCron("Error: Hidden reveal does not work! OPId: $opid");
 		}
+		$this->sleep();
 		
 		$worthy = false;
 		
@@ -90,8 +87,7 @@ final class Post extends Scraper
 
 			if (!($comment = NG_Comment::getBy('ngc_cid', $comment_id)))
 			{
-				Logger::logCron("New NG_Comment by {$user->displayName()} on {$post->getTitle()}: {$message}");
-				NG_PostCommented::commented($user, $post, $commentData['timestamp']);
+				Logger::logCron("New NG_Comment by {$user->displayName()}: {$message}");
 				$comment = NG_Comment::blank(array(
 					'ngc_cid' => $comment_id,
 					'ngc_user' => $user->getID(),
@@ -101,10 +97,13 @@ final class Post extends Scraper
 					'ngc_likes' => $commentData['likeCount'],
 					'ngc_dislikes' => $commentData['dislikeCount'],
 				))->insert();
+				NG_UserSectionStats::updateStatistics($post->getSection(), $user);
 			}
 			else
 			{
 				$comment->saveVars(array(
+					'ngc_message' => $message,
+					'ngc_created' => Time::getDate($commentData['timestamp']),
 					'ngc_likes' => $commentData['likeCount'],
 					'ngc_dislikes' => $commentData['dislikeCount'],
 				), true, $worthy);
@@ -118,12 +117,14 @@ final class Post extends Scraper
 			}
 		}
 		
-		if (!$post->getVar('ngp_creator'))
+		$found = false;
+		if ( ($opid) && (!$post->getVar('ngp_creator')) )
 		{
 			Logger::logCron("Checking hidden OPID {$opid}...");
 			if ($op = NG_User::getBy('ngu_uid', $opid))
 			{
-				$revealed = !NG_PostCommented::hasCommented($op, $post);
+				$found = true;
+				$revealed = !$post->hasCommented($op);
 				if ($revealed)
 				{
 					Logger::logCron("Revealed a hidden OP!");
@@ -151,6 +152,11 @@ final class Post extends Scraper
 		));
 		
 		$post->save();
+		
+		if ($found)
+		{
+			NG_UserSectionStats::updateStatistics($post->getSection(), $op);
+		}
 	}
 
 }

@@ -2,12 +2,8 @@
 namespace GDO\NeinGrep\Method;
 
 use GDO\Table\MethodQueryTable;
-use GDO\NeinGrep\NG_Post;
-use GDO\UI\GDT_EditButton;
-use GDO\NeinGrep\NGT_Post;
 use GDO\NeinGrep\NGT_User;
 use GDO\NeinGrep\NG_User;
-use GDO\DB\GDT_Id;
 
 /**
  * List scraped 9gag posts.

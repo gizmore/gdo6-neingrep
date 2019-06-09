@@ -4,10 +4,11 @@ namespace GDO\NeinGrep\Scraper;
 use GDO\Core\Logger;
 use GDO\Date\Time;
 use GDO\NeinGrep\NG_Post;
-use GDO\NeinGrep\NG_PostCommented;
 use GDO\NeinGrep\Scraper;
 use GDO\Net\HTTP;
 use GDO\NeinGrep\NG_User;
+use GDO\NeinGrep\NG_UserSectionStats;
+use GDO\NeinGrep\NG_Comment;
 
 /**
  * Scrape the newest posts from a user and posts where he commented.
@@ -79,6 +80,11 @@ final class User extends Scraper
 				'ngp_created' => Time::getDate($data['creationTs']),
 				'ngp_urgent' => '0',
 			), true, $worthy);
+			
+			if ($created)
+			{
+				NG_UserSectionStats::updateStatistics($post->getSection(), $user);
+			}
 		}
 		
 		$user->saveVar($column, $cursor);
@@ -111,6 +117,7 @@ final class User extends Scraper
 		$posts = $json['data']['posts'];
 		$nPosts = count($posts);
 		Logger::logCron("Got {$nPosts} Posts.");
+// 		print_r($json);
 		$this->sleep(); # sleep a while to not get detected by evil devops
 		
 		$cursor = $nPosts ? $json['data']['nextCursor'] : null;
@@ -125,14 +132,29 @@ final class User extends Scraper
 			}
 			
 			# Mark as commented
-			$created = NG_PostCommented::commented($user, $post);
+			$comment_id = $data['postUser']['commentId'];
+			if (!(NG_Comment::getBy('ngc_cid', $comment_id)))
+			{
+				NG_Comment::blank(array(
+					'ngc_id' => '0',
+					'ngc_cid' => $comment_id,
+					'ngc_user' => $user->getID(),
+					'ngc_post' => $post->getID(),
+					'ngc_message' => null,
+					'ngc_created' => null,
+					'ngc_likes' => '0',
+					'ngc_dislikes' => '0',
+					
+				))->insert();
+				NG_UserSectionStats::updateStatistics($post->getSection(), $user);
+			}
 			
 			$post->saveVars(array(
 				'ngp_comments' => $data['commentsCount'],
 				'ngp_upvotes' => $data['upVoteCount'],
 				'ngp_downvotes' => $data['downVoteCount'],
 				'ngp_created' => Time::getDate($data['creationTs']),
-			), true, $worthy);
+			));
 		}
 		
 		$user->saveVar($column, $cursor);

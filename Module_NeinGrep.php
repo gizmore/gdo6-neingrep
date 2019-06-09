@@ -4,8 +4,6 @@ namespace GDO\NeinGrep;
 use GDO\Core\GDO_Module;
 use GDO\DB\GDT_Float;
 use GDO\DB\GDT_UInt;
-use GDO\Date\GDT_Duration;
-use GDO\Date\Time;
 use GDO\Form\GDT_Select;
 
 /**
@@ -30,7 +28,6 @@ final class Module_NeinGrep extends GDO_Module
 			'GDO\\NeinGrep\\NG_Comment',
 			'GDO\\NeinGrep\\NG_CommentLike',
 			'GDO\\NeinGrep\\NG_PostLike',
-			'GDO\\NeinGrep\\NG_PostCommented',
 		);
 	}
 	

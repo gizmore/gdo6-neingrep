@@ -3,9 +3,7 @@ use GDO\NeinGrep\Server;
 use GDO\User\GDO_User;
 use GDO\Core\Application;
 use GDO\DB\Database;
-use GDO\Language\Trans;
 use GDO\Core\ModuleLoader;
-use GDO\Net\HTTP;
 
 chdir(__DIR__);
 chdir('../../../');

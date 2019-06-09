@@ -49,12 +49,32 @@ final class NG_Post extends GDO
 	public function hrefGag() { return "http://9gag.com/gag/{$this->getPostID()}"; }
 	public function hrefImage() { return $this->getVar('ngp_image'); }
 	
-	
 	/**
 	 * @return NG_User
 	 */
 	public function getUser() { return $this->getValue('ngp_creator'); }
 	
+	/**
+	 * @return NG_Section
+	 */
+	public function getSection() { return $this->getValue('ngp_section'); }
+	
+	/**
+	 * Check if a user commented a post
+	 * @param NG_User $user
+	 * @return boolean
+	 */
+	public function hasCommented(NG_User $user)
+	{
+		return NG_Comment::table()->countWhere("ngc_user = {$user->getID()} AND ngc_post = {$this->getID()}") > 0;
+	}
+	
+	/**
+	 * 
+	 * @param array $data
+	 * @param boolean $created
+	 * @return \GDO\NeinGrep\NG_Post
+	 */
 	public static function getOrCreate(array $data, &$created=false)
 	{
 		$created = false;
