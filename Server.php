@@ -8,6 +8,7 @@ use GDO\NeinGrep\Scraper\Section;
 use GDO\NeinGrep\Scraper\Warmup;
 use GDO\NeinGrep\Scraper\User;
 use GDO\NeinGrep\Scraper\Post;
+use GDO\DB\Database;
 
 /**
  * Simple endless loop of scraping stuff.
@@ -45,7 +46,9 @@ final class Server
 	{
 		NG_User::getOrCreate(['username' => 'zoidberg11917']); # initial fix
 		NG_Section::getOrCreateSection('default', 'Hot');
-
+		
+		$this->recalculateStats();
+		
 		Warmup::make()->scrapeWarmup();
 		
 		while (true)
@@ -54,9 +57,8 @@ final class Server
 			$this->scrapeNextPost();
 			$this->scrapeNextUser();
 			
-			Logger::logCron("Recalculating stats.");
-			sleep(1);
 			$this->recalculateStats();
+
 			Logger::logCron("Next cycle!");
 			sleep(1);
 		}
@@ -71,7 +73,7 @@ final class Server
 	{
 		$query = NG_User::table()->select();
 		$cut = Time::getDate(time() - $this->scrapeUserTimeout());
-		$query->where("ngu_scraped<'$cut'");
+		$query->where("ngu_scraped IS NULL OR ngu_scraped<'$cut'");
 		$query->order("RAND()");
 		$query->order('ngu_scraped');
 		$query->order("IF(ngu_creator={$this->system}, 1, 0)");
@@ -95,7 +97,6 @@ final class Server
 		$query->where("ngs_scraped IS NULL OR ngs_scraped < '$cut'");
 		$banned_sections = join(', ', Module_NeinGrep::instance()->cfgBannedSections());
 		$query->where("ngs_id NOT IN ($banned_sections)");
-		$query->debug();
 		$query->first();
 		if ($section = $query->exec()->fetchObject())
 		{
@@ -122,8 +123,30 @@ final class Server
 		}
 	}
 	
+	/**
+	 * Recalculate user summary statistics.
+	 */
 	public function recalculateStats()
 	{
+		Logger::logCron("Recalculating stats.");
+		sleep(1);
 		
+		# User posts
+		$subquery_postcount = "IFNULL( (SELECT COUNT(*) FROM ng_post WHERE ngp_creator = u.ngu_id), 0 )";
+		$subquery_ups = "IFNULL( (SELECT SUM(ngp_upvotes) FROM ng_post WHERE ngp_creator = u.ngu_id), 0 )";
+		$subquery_downs = "IFNULL( (SELECT SUM(ngp_downvotes) FROM ng_post WHERE ngp_creator = u.ngu_id), 0 )";
+		# User comments
+		$subquery_comments = "IFNULL( (SELECT COUNT(*) FROM ng_comment WHERE ngc_user = u.ngu_id), 0 )";
+		$subquery_likes = "IFNULL( (SELECT SUM(ngc_likes) FROM ng_comment WHERE ngc_user = u.ngu_id), 0 )";
+		$subquery_dislikes = "IFNULL( (SELECT SUM(ngc_dislikes) FROM ng_comment WHERE ngc_user = u.ngu_id), 0 )";
+		# Update 1		
+		$query = "UPDATE ng_user u SET ngu_posts = ( $subquery_postcount ), ngu_ups = ( $subquery_ups ), ngu_downs = ( $subquery_downs), ";
+		$query .= "ngu_comments = ( $subquery_comments ), ngu_likes = ( $subquery_likes ), ngu_dislikes = ( $subquery_dislikes ) ";
+		Database::instance()->queryWrite($query);
+		
+		# Section posts
+		$subquery_postcount = "IFNULL( (SELECT COUNT(*) FROM ng_post WHERE ngp_section = s.ngs_id), 0 )";
+		$query = "UPDATE ng_section s SET ngs_posts = ( $subquery_postcount)";
+		Database::instance()->queryWrite($query);
 	}
 }

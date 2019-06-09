@@ -3,7 +3,6 @@ namespace GDO\NeinGrep\Method;
 
 use GDO\Table\MethodQueryTable;
 use GDO\NeinGrep\NG_Post;
-use GDO\UI\GDT_EditButton;
 use GDO\NeinGrep\NGT_Post;
 use GDO\NeinGrep\NGT_User;
 use GDO\NeinGrep\NGT_Section;
@@ -23,8 +22,8 @@ final class Posts extends MethodQueryTable
 			NGT_User::make('ngu_name'),
 			NGT_Section::make('ngs_name'),
 			$table->gdoColumn('ngp_created'),
-			$table->gdoColumn('ngp_upvotes'),
 			$table->gdoColumn('ngp_comments'),
+			$table->gdoColumn('ngp_upvotes'),
 			$table->gdoColumn('ngp_downvotes'),
 			$table->gdoColumn('ngp_title'),
 		);

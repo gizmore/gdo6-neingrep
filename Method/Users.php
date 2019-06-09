@@ -7,6 +7,7 @@ use GDO\UI\GDT_EditButton;
 use GDO\NeinGrep\NGT_Post;
 use GDO\NeinGrep\NGT_User;
 use GDO\NeinGrep\NG_User;
+use GDO\DB\GDT_Id;
 
 /**
  * List scraped 9gag posts.
@@ -19,11 +20,14 @@ final class Users extends MethodQueryTable
 	{
 		$table = NG_User::table();
 		return array(
-			NGT_User::make(),
+			NGT_User::make('ngu_name'),
+			$table->gdoColumn('ngu_posts'),
+			$table->gdoColumn('ngu_ups'),
+			$table->gdoColumn('ngu_downs'),
+			$table->gdoColumn('ngu_comments'),
+			$table->gdoColumn('ngu_likes'),
+			$table->gdoColumn('ngu_dislikes'),
 			$table->gdoColumn('ngu_last_active'),
-			$table->gdoColumn('ngp_comments'),
-			$table->gdoColumn('ngp_downvotes'),
-			$table->gdoColumn('ngp_title'),
 		);
 	}
 	

@@ -58,7 +58,7 @@ final class NG_Post extends GDO
 				'ngp_title' => $data['title'],
 			))->insert();
 			$created = true;
-			Logger::logCron("Created a new post in {$section->getTitle()}");
+			Logger::logCron("New NG_Post in {$section->getTitle()}");
 		}
 		return $post;
 	}

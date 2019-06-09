@@ -7,6 +7,7 @@ use GDO\DB\GDT_String;
 use GDO\Util\Strings;
 use GDO\Date\GDT_DateTime;
 use GDO\Core\Logger;
+use GDO\DB\GDT_UInt;
 
 final class NG_Section extends GDO
 {
@@ -18,6 +19,7 @@ final class NG_Section extends GDO
 			GDT_AutoInc::make('ngs_id'),
 			GDT_String::make('ngs_name')->notNull()->unique()->max(64),
 			GDT_String::make('ngs_title')->max(128)->binary(),
+			GDT_UInt::make('ngs_posts')->notNull()->initial('0'),
 			GDT_String::make('ngs_cursor_front')->max(128)->ascii()->caseS(),
 			GDT_String::make('ngs_cursor_back')->max(128)->ascii()->caseS(),
 			GDT_DateTime::make('ngs_scraped'),

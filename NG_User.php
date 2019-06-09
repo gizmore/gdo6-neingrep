@@ -25,10 +25,12 @@ final class NG_User extends GDO
 			GDT_String::make('ngu_name')->notNull()->caseI(),
 			GDT_Address::make('ngu_address'),
 			GDT_DateTime::make('ngu_last_active'), # last time active on 9gag
-			GDT_UInt::make('ngu_posts'), # total num posts
-			GDT_UInt::make('ngu_ups'), # total num ups (for posts)
-			GDT_UInt::make('ngu_comments'), # total num comments
-			GDT_UInt::make('ngu_likes'), # total num likes (for comments)
+			GDT_UInt::make('ngu_posts')->notNull()->initial('0'), # total num posts
+			GDT_UInt::make('ngu_ups')->notNull()->initial('0'), # total num ups (for posts)
+			GDT_UInt::make('ngu_downs')->notNull()->initial('0'), # total num downs (for posts)
+			GDT_UInt::make('ngu_comments')->notNull()->initial('0'), # total num comments
+			GDT_UInt::make('ngu_likes')->notNull()->initial('0'), # total num likes (for comments)
+			GDT_UInt::make('ngu_dislikes')->initial('0'), # total num dislikes (for comments)
 			GDT_String::make('ngu_cursor_posts_front')->ascii()->caseS(),
 			GDT_String::make('ngu_cursor_posts_back')->ascii()->caseS(),
 			GDT_String::make('ngu_cursor_comment_posts_front')->ascii()->caseS(),

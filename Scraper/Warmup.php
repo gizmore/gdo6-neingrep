@@ -13,8 +13,8 @@ final class Warmup extends Scraper
 {
 	public function scrapeWarmup()
 	{
+		Logger::logCron("Warmup request.");
+		$this->beforeRequest();
 		HTTP::getFromURL($this->neinURL());
-		Logger::logCron("Warmup request...\n");
-		$this->sleep();
 	}
 }
