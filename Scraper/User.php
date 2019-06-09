@@ -46,7 +46,7 @@ final class User extends Scraper
 			return true;
 		}
 		
-		Logger::logCron("Scraping {$user->getName()} op posts {$cursor}");
+		Logger::logCron("Scraping own posts for {$user->getName()}");
 		
 		$url = $this->apiURL() . "user-posts/username/{$user->getName()}/type/posts";
 		$url .= $cursor ? "?$cursor" : '';
@@ -63,7 +63,7 @@ final class User extends Scraper
 		$cursor = $nPosts ? $json['data']['nextCursor'] : null;
 		foreach ($posts as $data)
 		{
-			$created = $worthy = false;
+			$created = false;
 
 			$post = NG_Post::getOrCreate($data, $created);
 			
@@ -79,7 +79,7 @@ final class User extends Scraper
 				'ngp_creator' => $user->getID(),
 				'ngp_created' => Time::getDate($data['creationTs']),
 				'ngp_urgent' => '0',
-			), true, $worthy);
+			));
 			
 			if ($created)
 			{
@@ -106,7 +106,7 @@ final class User extends Scraper
 			return true;
 		}
 		
-		Logger::logCron("Scraping {$user->getName()} comment posts {$cursor}");
+		Logger::logCron("Scraping comment posts for {$user->getName()} cursor={$cursor}");
 
 		$url = $this->apiURL() . "user-posts/username/{$user->getName()}/type/comments";
 		$url .= $cursor ? "?$cursor" : '';
