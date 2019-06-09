@@ -22,6 +22,7 @@ final class Module_NeinGrep extends GDO_Module
 		return array(
 			'GDO\\NeinGrep\\NG_Section',
 			'GDO\\NeinGrep\\NG_User',
+			'GDO\\NeinGrep\\NG_UserSectionStats',
 			'GDO\\NeinGrep\\NG_Post',
 			'GDO\\NeinGrep\\NG_Comment',
 			'GDO\\NeinGrep\\NG_CommentLike',

@@ -23,6 +23,10 @@ final class NGT_User extends GDT_Object
 	
 	public function getUser()
 	{
+		if ($this->gdo instanceof NG_User)
+		{
+			return $this->gdo;
+		}
 		return $this->getPost()->getUser();
 	}
 	

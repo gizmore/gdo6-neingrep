@@ -9,6 +9,7 @@ use GDO\NeinGrep\Scraper\Warmup;
 use GDO\NeinGrep\Scraper\User;
 use GDO\NeinGrep\Scraper\Post;
 use GDO\DB\Database;
+use GDO\NeinGrep\Scraper\Geotag;
 
 /**
  * Simple endless loop of scraping stuff.
@@ -53,9 +54,12 @@ final class Server
 		
 		while (true)
 		{
+			$this->showStatistics();
+			
 			$this->scrapeNextSection();
 			$this->scrapeNextPost();
 			$this->scrapeNextUser();
+// 			$this->scrapeNextGeotag();
 			
 			$this->recalculateStats();
 
@@ -64,9 +68,21 @@ final class Server
 		}
 	}
 	
+	public function showStatistics()
+	{
+		$requests = number_format(Module_NeinGrep::instance()->cfgRequestCount());
+		$users = number_format(NG_User::table()->countWhere());
+		$posts = number_format(NG_Post::table()->countWhere());
+		$ups = number_format(NG_Post::table()->select('SUM(ngp_upvotes)')->exec()->fetchValue());
+		$comments = number_format(NG_Comment::table()->countWhere());
+		$likes = number_format(NG_Comment::table()->select('SUM(ngc_likes)')->exec()->fetchValue());
+		
+		Logger::logCron("$requests Requests. $users User. $posts posts. $ups ups. $comments comments. $likes likes.");
+	}
+	
 	public function scrapeUserTimeout()
 	{
-		return 120;
+		return 900;
 	}
 	
 	public function scrapeNextUser()
@@ -86,7 +102,7 @@ final class Server
 	
 	public function scrapeSectionTimeout()
 	{
-		return 120;
+		return 900;
 	}
 	
 	public function scrapeNextSection()
@@ -96,7 +112,10 @@ final class Server
 		$cut = Time::getDate(time() - $this->scrapeSectionTimeout());
 		$query->where("ngs_scraped IS NULL OR ngs_scraped < '$cut'");
 		$banned_sections = join(', ', Module_NeinGrep::instance()->cfgBannedSections());
-		$query->where("ngs_id NOT IN ($banned_sections)");
+		if ($banned_sections)
+		{
+			$query->where("ngs_id NOT IN ($banned_sections)");
+		}
 		$query->first();
 		if ($section = $query->exec()->fetchObject())
 		{
@@ -106,20 +125,42 @@ final class Server
 	
 	public function scrapePostTimeout()
 	{
-		return 120;
+		return 900;
 	}
 	
+	/**
+	 * Find next post by a scoring algo and call post scraper.
+	 */
 	public function scrapeNextPost()
 	{
 		Logger::logCron("Scraping next post.");
-		$query = NG_Post::table()->select();
+		$query = NG_Post::table()->select('*');
+		$query->select('IF(ngp_creator IS NULL, 100, 0) creator_score');
+		$query->select('IF(ngp_scraped IS NULL, 50, 0) fresh_score');
+		$query->select('LEAST(ngp_upvotes/5, 20) upvote_score');
+		$query->select('LEAST(ngp_comments/5, 25) comment_score');
 		$cut = Time::getDate(time()-$this->scrapePostTimeout());
 		$query->where("ngp_scraped IS NULL OR ngp_scraped<'$cut'");
-		$query->order("RAND()");
+		$query->orderDESC("RAND() * (creator_score + fresh_score + upvote_score + comment_score)");
 		$query->first();
 		if ($post = $query->exec()->fetchObject())
 		{
-			return Post::make()->scrapePost($post);
+			Post::make()->scrapePost($post);
+		}
+	}
+	
+	public function scrapeNextGeotag()
+	{
+		$table = NG_Post::table();
+		$query = $table->select();
+		$query->where("ngp_image IS NOT NULL");
+		$query->where("ngp_image_scanned IS NULL");
+		$query->joinObject("ngp_creator");
+		$query->first();
+		$query->order("RAND()");
+		if ($post = $query->exec()->fetchObject())
+		{
+			Geotag::make()->scrapeGeotag($post);
 		}
 	}
 	

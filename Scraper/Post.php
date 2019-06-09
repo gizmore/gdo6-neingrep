@@ -35,7 +35,7 @@ final class Post extends Scraper
 		$postData = array(
 			'appId' => 'a_dd8f2b7d304a10edaf6f29517ea0ca4100a43d1b',
 			'url' => $post->hrefGag(),
-			'count' => 10,
+			'count' => 50,
 // 			'order' => 'date',
 			'order' => 'score',
 		);
@@ -45,20 +45,22 @@ final class Post extends Scraper
 		}
 // 		$postData['auth'] = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE1NjAwNTU1ODgsIm5iZiI6MTU2MDA1NTI4OCwiZXhwIjoxNTYwMDk4Nzg4LCJwcml2YXRlIjoicDRRdXBXeCtsUGYwOUJCQW9WWG5QZz09LnFPZ0hGOVFacU5HSkYyWnRYNWpLTUFyaGdEenUxbG1aellzZDVJRTRneTluT1FJenFEVTFER3p4TmFMRWVqeU5qa1F3aFM5eDJGdW9IbkV5TVJFK3lNeFBNeW54NkNJWmthZkRYRWlsWUc1d0Q3TU9XVU9tSWlEaXl2dmtxNElrZkV1dGt0SkQ3WHpmdWx1K0VkYTNmcUZLdzE0SktuNVdsWWVSYWxrVW55YmFaQmk4UmJHeEc2WitPc3hXaXJpeEpsRzY1UUs1bm5LcmtBeXBEQng0djVjRlZiYVBMNWQ4eEdYcXRaY0h4dVdaTmxaeUltcFF3U2tXM0lycHFYenJBV0IzMHJQWGpWejVlQ0k4SnpwRXNoUXZWM0dcL0lKOEtuQ3FZekVMaGRGSFNzZVJEaTdIOEhqQmZtYTJBaGlSUWZiaFwvSE0ya2YwVXF2dFVvWDBObE9XMFJcL2lpY2w0QmxKMHNrcDJPMzNmQ0NjdG5KdjE0RXRYcjhKWjVTZXdJQ3lRT3RXK0ZJMEVXcTBFZEZZd0xmZ01LbllQSmU0QncwNVBSOENSUkd1OUpHb052dmUxaEd0SVkwXC82ejd0ZmNlIn0.cCgVmffgoihzKdBDh6y07RkeFzFtKIulaAMfhUECCeA';
 		$postData['origin'] = "https://9gag.com";
-		Logger::logCron("Scraping Post comments {$post->getPostID()} - {$post->getTitle()} - REF {$ref}");
+		Logger::logCron("Scraping Post comments {$post->getPostID()} by {$post->getVar('ngp_creator')} - REF {$ref}");
 		$this->beforeRequest();
 		$url .= "?";
 		$url .= http_build_query($postData);
+// 		echo "$url\n";
 		$response = HTTP::getFromURL($url, false, false, $this->httpHeaders());
 		$json = json_decode($response, true);
 // 		print_r($json);
-		$this->sleep();
 		
 		$nComments = count($json['payload']['comments']);
 		Logger::logCron("Got {$nComments} comments.");
+		$this->sleep();
 		
 		$p = $json['payload'];
 		$total = $p['total'];
+		$opid = $p['opUserId'];
 		
 		$worthy = false;
 		
@@ -72,10 +74,14 @@ final class Post extends Scraper
 			
 			$userdata = $commentData['user'];
 			$username = $userdata['displayName'];
+			$userid = $userdata['userId'];
 			$user = NG_User::getOrCreate(array(
 				'username' => $username,
 			));
-			$user->saveVar('ngu_last_active', Time::getDate($userdata['activeTs']));
+			$user->saveVars(array(
+				'ngu_uid' => $userid,
+				'ngu_last_active' => Time::getDate($userdata['activeTs']),
+			));
 
 			if (!($comment = NG_Comment::getBy('ngc_cid', $comment_id)))
 			{
@@ -86,9 +92,9 @@ final class Post extends Scraper
 					'ngc_user' => $user->getID(),
 					'ngc_post' => $post->getID(),
 					'ngc_message' => $message,
-					'ngc_created' => Time::getDate($comment['timestamp']),
-					'ngc_likes' => $comment['likeCount'],
-					'ngc_dislikes' => $comment['dislikeCount'],
+					'ngc_created' => Time::getDate($commentData['timestamp']),
+					'ngc_likes' => $commentData['likeCount'],
+					'ngc_dislikes' => $commentData['dislikeCount'],
 				))->insert();
 			}
 			else
@@ -107,11 +113,21 @@ final class Post extends Scraper
 			}
 		}
 		
+		if (!$post->getVar('ngp_creator'))
+		{
+			Logger::logCron("Checking hidden OPID...");
+			if ($op = NG_User::getBy('ngu_uid', $opid))
+			{
+				Logger::logCron("Found OP!");
+				$post->saveVar('ngp_creator', $op->getID());
+			}
+		}
+		
 		$post->saveVars(array(
-			'ngp_comment_ref' => $ref,
+			'ngp_comment_ref' => $p['hasNext'] ? $ref : null,
 			'ngp_comments' => $total,
 		));
 		
-		
 	}
+
 }

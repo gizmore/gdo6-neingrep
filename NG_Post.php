@@ -9,6 +9,8 @@ use GDO\DB\GDT_Object;
 use GDO\Date\GDT_DateTime;
 use GDO\DB\GDT_Checkbox;
 use GDO\Core\Logger;
+use GDO\Net\GDT_Url;
+use GDO\Maps\GDT_Position;
 
 final class NG_Post extends GDO
 {
@@ -29,6 +31,9 @@ final class NG_Post extends GDO
 			GDT_UInt::make('ngp_upvotes')->notNull()->initial('0'),
 			GDT_UInt::make('ngp_downvotes')->notNull()->initial('0'),
 			GDT_String::make('ngp_comment_ref')->max(64)->ascii()->caseS(),
+			GDT_Url::make('ngp_image'),
+			GDT_Position::make('ngp_position'),
+			GDT_DateTime::make('ngp_image_scanned'),
 		);
 	}
 	
@@ -39,6 +44,7 @@ final class NG_Post extends GDO
 	public function displayTitle() { return $this->display('ngp_title'); }
 	
 	public function hrefGag() { return "http://9gag.com/gag/{$this->getPostID()}"; }
+	public function hrefImage() { return $this->getVar('ngp_image'); }
 	
 	
 	/**
@@ -52,11 +58,20 @@ final class NG_Post extends GDO
 		if (!($post = self::getBy('ngp_nid', $data['id'])))
 		{
 			$section = NG_Section::getOrCreate($data['postSection']);
+			
 			$post = self::blank(array(
 				'ngp_nid' => $data['id'],
 				'ngp_section' => $section->getID(),
 				'ngp_title' => html_entity_decode($data['title'], ENT_QUOTES|ENT_HTML5),
-			))->insert();
+				'ngp_nsfw' => $data['nsfw']?'1':'0',
+			));
+			
+			if (@$data['images']['image700'])
+			{
+				$post->setVar('ngp_image', $data['images']['image700']['url']);
+			}
+			
+			$post->insert();
 			$created = true;
 			Logger::logCron("New NG_Post in {$section->getTitle()}");
 		}

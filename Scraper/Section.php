@@ -40,7 +40,7 @@ final class Section extends Scraper
 		
 		$json = json_decode($response, true);
 		
-		if ($json['meta']['status'] === 'failure')
+		if ($json['meta']['status'] === 'Failure')
 		{
 			if ($json['meta']['errorMessage'] === 'Invalid group')
 			{
@@ -80,16 +80,15 @@ final class Section extends Scraper
 			$post = NG_Post::getOrCreate($data, $created);
 			
 			$post->saveVars(array(
-				'ngp_nsfw' => $data['nsfw'],
 				'ngp_comments' => $data['commentsCount'],
 				'ngp_upvotes' => $data['upVoteCount'],
 				'ngp_downvotes' => $data['downVoteCount'],
-				'ngp_creator' => null,
 				'ngp_created' => Time::getDate($data['creationTs']),
 			), true, $worthy);
 			
 			if ($front && (!$created))
 			{
+				Logger::logCron("Section front cursor nulled.");
 				$cursor = null;
 			}
 		}

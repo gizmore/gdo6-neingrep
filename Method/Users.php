@@ -33,6 +33,6 @@ final class Users extends MethodQueryTable
 	
 	public function getQuery()
 	{
-		return NG_Post::table()->select();
+		return NG_User::table()->select();
 	}
 }

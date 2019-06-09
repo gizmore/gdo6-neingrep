@@ -72,7 +72,6 @@ final class User extends Scraper
 			}
 
 			$post->saveVars(array(
-				'ngp_nsfw' => $data['nsfw'],
 				'ngp_comments' => $data['commentsCount'],
 				'ngp_upvotes' => $data['upVoteCount'],
 				'ngp_downvotes' => $data['downVoteCount'],
@@ -128,7 +127,6 @@ final class User extends Scraper
 			$created = NG_PostCommented::commented($user, $post);
 			
 			$post->saveVars(array(
-				'ngp_nsfw' => $data['nsfw'],
 				'ngp_comments' => $data['commentsCount'],
 				'ngp_upvotes' => $data['upVoteCount'],
 				'ngp_downvotes' => $data['downVoteCount'],

@@ -12,6 +12,7 @@ use GDO\Date\GDT_DateTime;
 use GDO\DB\GDT_CreatedAt;
 use GDO\DB\GDT_CreatedBy;
 use GDO\User\GDO_User;
+use GDO\Maps\GDT_Position;
 
 final class NG_User extends GDO
 {
@@ -23,6 +24,7 @@ final class NG_User extends GDO
 			GDT_AutoInc::make('ngu_id'),
 			GDT_User::make('ngu_user'),
 			GDT_String::make('ngu_name')->notNull()->caseI(),
+			GDT_String::make('ngu_uid')->ascii()->caseS()->max(24),
 			GDT_Address::make('ngu_address'),
 			GDT_DateTime::make('ngu_last_active'), # last time active on 9gag
 			GDT_UInt::make('ngu_posts')->notNull()->initial('0'), # total num posts
