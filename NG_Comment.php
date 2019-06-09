@@ -8,7 +8,6 @@ use GDO\UI\GDT_Message;
 use GDO\DB\GDT_UInt;
 use GDO\DB\GDT_String;
 use GDO\Date\GDT_DateTime;
-use GDO\Core\Logger;
 
 final class NG_Comment extends GDO
 {
@@ -26,16 +25,5 @@ final class NG_Comment extends GDO
 			GDT_UInt::make('ngc_likes')->initial('0'),
 			GDT_UInt::make('ngc_dislikes')->initial('0'),
 		);
-	}
-	
-	public static function getOrCreate(array $comment)
-	{
-		
-	}
-	
-	public static function createComment(array $comment)
-	{
-		Logger::logCron("Created new comment.");
-		
 	}
 }

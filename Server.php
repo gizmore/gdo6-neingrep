@@ -43,22 +43,36 @@ final class Server
 	
 	public function run()
 	{
-		NG_User::getOrCreate(['username' => 'sahman988']); # initial fix
+		NG_User::getOrCreate(['username' => 'zoidberg11917']); # initial fix
 		NG_Section::getOrCreateSection('default', 'Hot');
+
 		Warmup::make()->scrapeWarmup();
+		
 		while (true)
 		{
-			$this->scrapeNextUser();
 			$this->scrapeNextSection();
 			$this->scrapeNextPost();
+			$this->scrapeNextUser();
+			
+			Logger::logCron("Recalculating stats.");
+			sleep(1);
+			$this->recalculateStats();
 			Logger::logCron("Next cycle!");
 			sleep(1);
 		}
 	}
 	
+	public function scrapeUserTimeout()
+	{
+		return 120;
+	}
+	
 	public function scrapeNextUser()
 	{
 		$query = NG_User::table()->select();
+		$cut = Time::getDate(time() - $this->scrapeUserTimeout());
+		$query->where("ngu_scraped<'$cut'");
+		$query->order("RAND()");
 		$query->order('ngu_scraped');
 		$query->order("IF(ngu_creator={$this->system}, 1, 0)");
 		$query->first();
@@ -70,7 +84,7 @@ final class Server
 	
 	public function scrapeSectionTimeout()
 	{
-		return 60;
+		return 120;
 	}
 	
 	public function scrapeNextSection()
@@ -96,12 +110,17 @@ final class Server
 		Logger::logCron("Scraping next post.");
 		$query = NG_Post::table()->select();
 		$cut = Time::getDate(time()-$this->scrapePostTimeout());
-		$query->where("ngp_scraped<'$cut'");
+		$query->where("ngp_scraped IS NULL OR ngp_scraped<'$cut'");
 		$query->order("RAND()");
 		$query->first();
 		if ($post = $query->exec()->fetchObject())
 		{
 			return Post::make()->scrapePost($post);
 		}
+	}
+	
+	public function recalculateStats()
+	{
+		
 	}
 }

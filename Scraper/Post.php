@@ -21,14 +21,11 @@ final class Post extends Scraper
 	public function scrapePost(NG_Post $post)
 	{
 		Logger::logCron("Scraping post {$post->getPostID()} {$post->displayTitle()}");
-		$this->scrapePostComments($post);
+		if ($post->getCommentCount())
+		{
+			$this->scrapePostComments($post);
+		}
 		$post->saveVar('ngp_scraped', Time::getDate());
-		
-	}
-	
-	public function scrapePostCommentsPostData(NG_Post $post)
-	{
-		
 	}
 	
 	public function scrapePostComments(NG_Post $post)
@@ -48,14 +45,17 @@ final class Post extends Scraper
 		}
 // 		$postData['auth'] = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpYXQiOjE1NjAwNTU1ODgsIm5iZiI6MTU2MDA1NTI4OCwiZXhwIjoxNTYwMDk4Nzg4LCJwcml2YXRlIjoicDRRdXBXeCtsUGYwOUJCQW9WWG5QZz09LnFPZ0hGOVFacU5HSkYyWnRYNWpLTUFyaGdEenUxbG1aellzZDVJRTRneTluT1FJenFEVTFER3p4TmFMRWVqeU5qa1F3aFM5eDJGdW9IbkV5TVJFK3lNeFBNeW54NkNJWmthZkRYRWlsWUc1d0Q3TU9XVU9tSWlEaXl2dmtxNElrZkV1dGt0SkQ3WHpmdWx1K0VkYTNmcUZLdzE0SktuNVdsWWVSYWxrVW55YmFaQmk4UmJHeEc2WitPc3hXaXJpeEpsRzY1UUs1bm5LcmtBeXBEQng0djVjRlZiYVBMNWQ4eEdYcXRaY0h4dVdaTmxaeUltcFF3U2tXM0lycHFYenJBV0IzMHJQWGpWejVlQ0k4SnpwRXNoUXZWM0dcL0lKOEtuQ3FZekVMaGRGSFNzZVJEaTdIOEhqQmZtYTJBaGlSUWZiaFwvSE0ya2YwVXF2dFVvWDBObE9XMFJcL2lpY2w0QmxKMHNrcDJPMzNmQ0NjdG5KdjE0RXRYcjhKWjVTZXdJQ3lRT3RXK0ZJMEVXcTBFZEZZd0xmZ01LbllQSmU0QncwNVBSOENSUkd1OUpHb052dmUxaEd0SVkwXC82ejd0ZmNlIn0.cCgVmffgoihzKdBDh6y07RkeFzFtKIulaAMfhUECCeA';
 		$postData['origin'] = "https://9gag.com";
-		Logger::logCron("Scraping Post comments {$post->getPostID()} - {$post->getTitle()}\n");
-		$this->sleep();
+		Logger::logCron("Scraping Post comments {$post->getPostID()} - {$post->getTitle()} - REF {$ref}\n");
+		$this->beforeRequest();
 		$url .= "?";
 		$url .= http_build_query($postData);
 		$response = HTTP::getFromURL($url, false, false, $this->httpHeaders());
 		$json = json_decode($response, true);
-		print_r($json);
+// 		print_r($json);
 		$this->sleep();
+		
+		$nComments = count($json['payload']['comments']);
+		Logger::logCron("Got {$nComments} comments.");
 		
 		$p = $json['payload'];
 		$total = $p['total'];
@@ -70,11 +70,12 @@ final class Post extends Scraper
 			$comment_id = $comment['commentId'];
 			$message = $comment['text'];
 			
-			$user = $p['user'];
-			$username = $user['displayName'];
+			$userdata = $comment['user'];
+			$username = $userdata['displayName'];
 			$user = NG_User::getOrCreate(array(
 				'username' => $username,
 			));
+			$user->saveVar('ngu_last_active', Time::getDate($userdata['activeTs']));
 
 			if (!($comment = NG_Comment::getBy('ngc_cid', $comment_id)))
 			{
@@ -99,6 +100,7 @@ final class Post extends Scraper
 				
 				if (!$worthy)
 				{
+					Logger::logCron("Stopping theses comments.");
 					$ref = null;
 					break;
 				}

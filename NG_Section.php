@@ -18,7 +18,8 @@ final class NG_Section extends GDO
 			GDT_AutoInc::make('ngs_id'),
 			GDT_String::make('ngs_name')->notNull()->unique()->max(64),
 			GDT_String::make('ngs_title')->max(128)->binary(),
-			GDT_String::make('ngs_cursor')->max(128)->ascii()->caseS(),
+			GDT_String::make('ngs_cursor_front')->max(128)->ascii()->caseS(),
+			GDT_String::make('ngs_cursor_back')->max(128)->ascii()->caseS(),
 			GDT_DateTime::make('ngs_scraped'),
 		);
 	}

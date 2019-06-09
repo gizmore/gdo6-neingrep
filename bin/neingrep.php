@@ -23,6 +23,6 @@ $app = new NeinGrepServelet();
 Database::init();
 ModuleLoader::instance()->loadModules();
 GDO_User::$CURRENT = GDO_User::system();
-HTTP::$DEBUG = true;
+// HTTP::$DEBUG = true;
 
 Server::make($argc, $argv)->init()->run();

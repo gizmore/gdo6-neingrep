@@ -32,15 +32,18 @@ final class Module_NeinGrep extends GDO_Module
 	public function getConfig()
 	{
 		return array(
-			GDT_Float::make('ng_request_sleep')->initial('8.0'),
+			GDT_Float::make('ng_request_sleep')->initial('5.0'),
 			GDT_UInt::make('ng_request_count')->writable(false)->editable(false)->initial('0'),
 			GDT_Duration::make('ng_scrape_max_age')->initial(Time::ONE_YEAR*2),
 		);
 	}
 	
+	public function increaseRequestCounter() { return $this->saveConfigVar('ng_request_count', $this->cfgRequestCount()+1); }
+
 	public function cfgRequestCount() { return $this->getConfigVar('ng_request_count'); }
 	public function cfgRequestSleep() { return $this->getConfigValue('ng_request_sleep'); }
 	public function cfgRequestSleepMicros() { return intval($this->cfgRequestSleep()*1000000); }
 	public function cfgScrapeMaxAge() { return $this->getConfigValue('ng_scrape_max_age'); }
+	
 	
 }

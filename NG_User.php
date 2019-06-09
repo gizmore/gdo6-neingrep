@@ -29,8 +29,10 @@ final class NG_User extends GDO
 			GDT_UInt::make('ngu_ups'), # total num ups (for posts)
 			GDT_UInt::make('ngu_comments'), # total num comments
 			GDT_UInt::make('ngu_likes'), # total num likes (for comments)
-			GDT_String::make('ngu_cursor_posts')->ascii()->caseS(), # last time scraped
-			GDT_String::make('ngu_cursor_comment_posts')->ascii()->caseS(), # last time scraped
+			GDT_String::make('ngu_cursor_posts_front')->ascii()->caseS(),
+			GDT_String::make('ngu_cursor_posts_back')->ascii()->caseS(),
+			GDT_String::make('ngu_cursor_comment_posts_front')->ascii()->caseS(),
+			GDT_String::make('ngu_cursor_comment_posts_back')->ascii()->caseS(),
 			GDT_DateTime::make('ngu_scraped'), # last time scraped
 			GDT_CreatedAt::make('ngu_created'),
 			GDT_CreatedBy::make('ngu_creator'),

@@ -40,6 +40,12 @@ class Scraper
 		usleep(Module_NeinGrep::instance()->cfgRequestSleepMicros());
 	}
 	
+	public function beforeRequest()
+	{
+		$this->sleep();
+		Module_NeinGrep::instance()->increaseRequestCounter();
+	}
+	
 	public function neinURL()
 	{
 		return "https://9gag.com/";

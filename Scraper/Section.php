@@ -16,39 +16,68 @@ final class Section extends Scraper
 {
 	public function scrapeSection(NG_Section $section)
 	{
-		$nextCursor = $section->getVar('ngs_cursor');
-		Logger::logCron("Scraping section {$section->getTitle()}... via {$section->getName()} {$nextCursor}");
+		$this->scrapeSectionB($section, true);
+		$this->scrapeSectionB($section, false);
+	}
+
+	public function scrapeSectionB(NG_Section $section, bool $front)
+	{
+		$column = $front ? 'ngs_cursor_front' : 'ngs_cursor_back';
+		$cursor = $section->getVar($column);
 		
-		$url = $this->apiURL() . "group-posts/group/{$section->getName()}/type/fresh{$nextCursor}";
+		if ($front && ($section->getVar('ngs_cursor_back') === null))
+		{
+			return true;
+		}
 		
+		$nextCursor = $cursor ? "?{$cursor}" : '';
+		$subsection = 'fresh';
+		Logger::logCron("Scraping section {$section->getTitle()}... via {$section->getName()} {$subsection} {$nextCursor}");
+
+		$this->beforeRequest();
+		$url = $this->apiURL() . "group-posts/group/{$section->getName()}/type/{$subsection}{$nextCursor}";
 		$response = HTTP::getFromURL($url, false, false, $this->httpHeaders());
 		
 		$json = json_decode($response, true);
+		$posts = $json['data']['posts'];
+		$nPosts = count($posts);
 		
-		print_r($json);
+		if (!$nPosts)
+		{
+			$section->saveVars(array(
+				'ngs_cursor' => null,
+			));
+			return true;
+		}
+		
+// 		print_r($json);
+		Logger::logCron("Got {$nPosts} posts.");
 		$this->sleep(); # sleep a while to not get detected by evil devops
 		
-		$posts = $json['data']['posts'];
+		$cursor = $json['data']['nextCursor'];
 		
-		$changed = false;
 		foreach ($posts as $data)
 		{
 			$created = $worthy = false;
 			$post = NG_Post::getOrCreate($data, $created);
+			
 			$post->saveVars(array(
 				'ngp_nsfw' => $data['nsfw'],
 				'ngp_comments' => $data['commentsCount'],
 				'ngp_upvotes' => $data['upVoteCount'],
 				'ngp_downvotes' => $data['downVoteCount'],
 				'ngp_creator' => null,
+				'ngp_created' => Time::getDate($data['creationTs']),
 			), true, $worthy);
 			
-			$changed = $worthy || $created;
+			if ($front && (!$created))
+			{
+				$cursor = null;
+			}
 		}
 		
-		$nextCursor = $changed ? $json['data']['nextCursor'] : null;
 		$section->saveVars(array(
-			'ngs_cursor' => $nextCursor,
+			$column => $cursor,
 			'ngs_scraped' => Time::getDate(),
 		));
 	}

@@ -28,16 +28,17 @@ final class NG_Post extends GDO
 			GDT_UInt::make('ngp_comments')->notNull()->initial('0'),
 			GDT_UInt::make('ngp_upvotes')->notNull()->initial('0'),
 			GDT_UInt::make('ngp_downvotes')->notNull()->initial('0'),
-			GDT_String::make('ngp_comment_ref')->ascii()->max(32)->caseS(),
+			GDT_String::make('ngp_comment_ref')->max(64)->ascii()->caseS(),
 		);
 	}
 	
 	public function getPostID() { return $this->getVar('ngp_nid'); }
 	public function getTitle() { return $this->getVar('ngp_title'); }
 	public function getCommentRef() { return $this->getVar('ngp_comment_ref'); }
+	public function getCommentCount() { return $this->getValue('ngp_comments'); }
 	public function displayTitle() { return $this->display('ngp_title'); }
 	
-	public function hrefGag() { return "https://9gag.com/gag/{$this->getPostID()}"; }
+	public function hrefGag() { return "http://9gag.com/gag/{$this->getPostID()}"; }
 	
 	
 	/**
