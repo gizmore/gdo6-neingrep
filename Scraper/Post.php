@@ -79,7 +79,7 @@ final class Post extends Scraper
 
 			if (!($comment = NG_Comment::getBy('ngc_cid', $comment_id)))
 			{
-				Logger::logCron("New comment by {$user->displayName()} on {$post->getTitle()}: {$message}");
+				Logger::logCron("New NG_Comment by {$user->displayName()} on {$post->getTitle()}: {$message}");
 				NG_PostCommented::commented($user, $post, $commentData['timestamp']);
 				$comment = NG_Comment::blank(array(
 					'ngc_cid' => $comment_id,
