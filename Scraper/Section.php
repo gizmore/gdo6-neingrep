@@ -39,13 +39,31 @@ final class Section extends Scraper
 		$response = HTTP::getFromURL($url, false, false, $this->httpHeaders());
 		
 		$json = json_decode($response, true);
-		$posts = $json['data']['posts'];
+		
+		if ($json['meta']['status'] === 'failure')
+		{
+			if ($json['meta']['errorMessage'] === 'Invalid group')
+			{
+				Logger::logCron("deleting section {$section->getTitle()}");
+				$section->delete();
+				return false;
+			}
+		}
+		if (!($posts = @$json['data']['posts']))
+		{
+			$section->saveVars(array(
+				'ngs_scraped' => Time::getDate(),
+			));
+			Logger::logCron("Error\n" . print_r($response, 1));
+			return false;
+		}
+
 		$nPosts = count($posts);
 		
 		if (!$nPosts)
 		{
 			$section->saveVars(array(
-				'ngs_cursor' => null,
+				$column => null,
 			));
 			return true;
 		}

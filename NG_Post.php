@@ -55,7 +55,7 @@ final class NG_Post extends GDO
 			$post = self::blank(array(
 				'ngp_nid' => $data['id'],
 				'ngp_section' => $section->getID(),
-				'ngp_title' => $data['title'],
+				'ngp_title' => html_entity_decode($data['title'], ENT_QUOTES|ENT_HTML5),
 			))->insert();
 			$created = true;
 			Logger::logCron("New NG_Post in {$section->getTitle()}");

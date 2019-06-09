@@ -68,7 +68,7 @@ final class Post extends Scraper
 		{
 			$ref = $commentData['orderKey'];
 			$comment_id = $commentData['commentId'];
-			$message = $commentData['text'];
+			$message = html_entity_decode($commentData['text'], ENT_QUOTES|ENT_HTML5);
 			
 			$userdata = $commentData['user'];
 			$username = $userdata['displayName'];
