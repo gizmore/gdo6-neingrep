@@ -12,7 +12,6 @@ use GDO\Date\GDT_DateTime;
 use GDO\DB\GDT_CreatedAt;
 use GDO\DB\GDT_CreatedBy;
 use GDO\User\GDO_User;
-use GDO\Maps\GDT_Position;
 
 final class NG_User extends GDO
 {
@@ -45,6 +44,8 @@ final class NG_User extends GDO
 	
 	public function getName() { return $this->getVar('ngu_name'); }
 	public function displayName() { return html($this->getVar('ngu_name')); }
+	
+	public function hrefProfile() { return "https://9gag.com/u/" . urlencode($this->getName()); }
 	
 	public function renderCell() { return $this->displayName(); }
 	

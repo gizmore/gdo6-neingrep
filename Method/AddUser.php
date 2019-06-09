@@ -9,9 +9,16 @@ use GDO\Form\GDT_AntiCSRF;
 use GDO\NeinGrep\NG_User;
 use GDO\User\GDO_User;
 use GDO\NeinGrep\Scraper;
+use GDO\Core\GDT_Success;
 
 final class AddUser extends MethodForm
 {
+	public function renderPage()
+	{
+		$menu = $this->templatePHP('page/admin_menu.php');
+		return $menu->add(parent::renderPage());
+	}
+	
 	public function createForm(GDT_Form $form)
 	{
 		$form->addField(GDT_String::make('ngu_name'));
@@ -21,14 +28,17 @@ final class AddUser extends MethodForm
 
 	public function formValidated(GDT_Form $form)
 	{
-		$username = $form->getFormVar('ngu_name');
-		if (Scraper::make()->scrapeUserExist($username))
+		if ($username = $form->getFormVar('ngu_name'))
 		{
-			$user = NG_User::getOrCreate(['username' => $username]);
-			$user->saveVar('ngu_creator', GDO_User::current()->getID());
-			return parent::formValidated($form);
+			if (Scraper::make()->scrapeUserExist($username))
+			{
+				$user = NG_User::getOrCreate(['username' => $username]);
+				$user->saveVar('ngu_creator', GDO_User::current()->getID());
+				$response = $this->renderPage();
+				return $response->add(GDT_Success::responseWith('msg_9gag_user_added'));
+			}
 		}
-		return self::renderPage();
+		return $this->renderPage();
 	}
 	
 }

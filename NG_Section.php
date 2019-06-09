@@ -79,8 +79,27 @@ final class NG_Section extends GDO
 		if (self::$ALL_CACHE === null)
 		{
 			self::$ALL_CACHE = self::table()->select('ngs_name, ngs_title')->order('ngs_title')->exec()->fetchAllArray2dPair();
+			uasort(self::$ALL_CACHE, function($a, $b){
+				return strcasecmp($a->getTitle(), $b->getTitle());
+			});
 		}
 		return self::$ALL_CACHE;
+	}
+	
+	private static $ALL_CACHE2 = null;
+	/**
+	 * @return self[]
+	 */
+	public function all()
+	{
+		if (self::$ALL_CACHE2 === null)
+		{
+			self::$ALL_CACHE2 = parent::all();
+			uasort(self::$ALL_CACHE2, function($a, $b){
+				return strcasecmp($a->getTitle(), $b->getTitle());
+			});
+		}
+		return self::$ALL_CACHE2;
 	}
 	
 }

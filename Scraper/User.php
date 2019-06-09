@@ -77,6 +77,7 @@ final class User extends Scraper
 				'ngp_downvotes' => $data['downVoteCount'],
 				'ngp_creator' => $user->getID(),
 				'ngp_created' => Time::getDate($data['creationTs']),
+				'ngp_urgent' => '0',
 			), true, $worthy);
 		}
 		

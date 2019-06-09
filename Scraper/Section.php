@@ -72,7 +72,10 @@ final class Section extends Scraper
 		Logger::logCron("Got {$nPosts} posts.");
 		$this->sleep(); # sleep a while to not get detected by evil devops
 		
-		$cursor = $json['data']['nextCursor'];
+		if (@$json['data']['nextCursor'])
+		{
+			$cursor = $json['data']['nextCursor'];
+		}
 		
 		foreach ($posts as $data)
 		{

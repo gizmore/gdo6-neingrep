@@ -5,7 +5,6 @@ use GDO\Core\GDO;
 use GDO\DB\GDT_Object;
 use GDO\Date\GDT_DateTime;
 use GDO\Date\Time;
-use GDO\Core\Logger;
 
 final class NG_PostCommented extends GDO
 {
@@ -20,6 +19,11 @@ final class NG_PostCommented extends GDO
 		);
 	}
 	
+	public static function hasCommented(NG_User $user, NG_Post $post)
+	{
+		return self::getById($user->getID(), $post->getID());
+	}
+
 	public static function commented(NG_User $user, NG_Post $post, $time=0)
 	{
 		if (!(self::getById($user->getID(), $post->getID())))
@@ -33,4 +37,5 @@ final class NG_PostCommented extends GDO
 		}
 		return false;;
 	}
+	
 }

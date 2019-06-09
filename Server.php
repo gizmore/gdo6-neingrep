@@ -35,6 +35,7 @@ final class Server
 	
 	private $system;
 	private $module;
+	private $lastSection = null;
 	
 	public function init()
 	{
@@ -45,7 +46,7 @@ final class Server
 	
 	public function run()
 	{
-		NG_User::getOrCreate(['username' => 'zoidberg11917']); # initial fix
+		# Create first section
 		NG_Section::getOrCreateSection('default', 'Hot');
 		
 		$this->recalculateStats();
@@ -73,11 +74,17 @@ final class Server
 		$requests = number_format(Module_NeinGrep::instance()->cfgRequestCount());
 		$users = number_format(NG_User::table()->countWhere());
 		$posts = number_format(NG_Post::table()->countWhere());
+		$urgent = number_format(NG_Post::table()->countWhere("ngp_urgent"));
+		$known = number_format(NG_Post::table()->countWhere('ngp_creator IS NOT NULL'));
+		$revealed = number_format(NG_Post::table()->countWhere('ngp_revealed IS NOT NULL'));
 		$ups = number_format(NG_Post::table()->select('SUM(ngp_upvotes)')->exec()->fetchValue());
 		$comments = number_format(NG_Comment::table()->countWhere());
+		$totalcomments = number_format(NG_Post::table()->select('SUM(ngp_comments)')->exec()->fetchValue());
 		$likes = number_format(NG_Comment::table()->select('SUM(ngc_likes)')->exec()->fetchValue());
 		
-		Logger::logCron("$requests Requests. $users User. $posts posts. $ups ups. $comments comments. $likes likes.");
+		Logger::logCron("$requests Requests. $users User.");
+		Logger::logCron("$posts posts - $known OPs identified - $revealed OPs revealed. $urgent urgent posts queued.");
+		Logger::logCron("$ups ups. $comments comments of $totalcomments loaded. $likes likes.");
 	}
 	
 	public function scrapeUserTimeout()
@@ -91,7 +98,6 @@ final class Server
 		$cut = Time::getDate(time() - $this->scrapeUserTimeout());
 		$query->where("ngu_scraped IS NULL OR ngu_scraped<'$cut'");
 		$query->order("RAND()");
-		$query->order('ngu_scraped');
 		$query->order("IF(ngu_creator={$this->system}, 1, 0)");
 		$query->first();
 		if ($user = $query->exec()->fetchObject())
@@ -102,24 +108,35 @@ final class Server
 	
 	public function scrapeSectionTimeout()
 	{
-		return 900;
+		return 600;
 	}
 	
 	public function scrapeNextSection()
 	{
 		$query = NG_Section::table()->select();
-		$query->order('ngs_scraped');
+		$query->order('RAND()')->order('ngs_scraped');
+		
+		# Filter scraped
 		$cut = Time::getDate(time() - $this->scrapeSectionTimeout());
 		$query->where("ngs_scraped IS NULL OR ngs_scraped < '$cut'");
-		$banned_sections = join(', ', Module_NeinGrep::instance()->cfgBannedSections());
-		if ($banned_sections)
+		
+		# Filter sections
+		if ($banned_sections = join(', ', Module_NeinGrep::instance()->cfgBannedSections()))
 		{
 			$query->where("ngs_id NOT IN ($banned_sections)");
 		}
-		$query->first();
-		if ($section = $query->exec()->fetchObject())
+		
+		# Filter sections
+		if ($allowed_sections = join(', ', Module_NeinGrep::instance()->cfgAllowedSections()))
 		{
-			Section::make()->scrapeSection($section);
+			$query->where("ngs_id IN ($allowed_sections)");
+		}
+		
+		# Scrape
+		$query->first();
+		if ($this->lastSection = $query->exec()->fetchObject())
+		{
+			Section::make()->scrapeSection($this->lastSection);
 		}
 	}
 	
@@ -135,13 +152,19 @@ final class Server
 	{
 		Logger::logCron("Scraping next post.");
 		$query = NG_Post::table()->select('*');
-		$query->select('IF(ngp_creator IS NULL, 100, 0) creator_score');
+		$query->select('IF(ngp_urgent, 5000, 0) urgent_score');
+		$query->select('IF(ngp_uid IS NOT NULL, 50, 0) reveal_score');
+		$query->select('IF(ngp_creator IS NULL, 50, 0) creator_score');
 		$query->select('IF(ngp_scraped IS NULL, 50, 0) fresh_score');
 		$query->select('LEAST(ngp_upvotes/5, 20) upvote_score');
-		$query->select('LEAST(ngp_comments/5, 25) comment_score');
+		$query->select('LEAST(ngp_comments/5, 35) comment_score');
 		$cut = Time::getDate(time()-$this->scrapePostTimeout());
 		$query->where("ngp_scraped IS NULL OR ngp_scraped<'$cut'");
-		$query->orderDESC("RAND() * (creator_score + fresh_score + upvote_score + comment_score)");
+		if ($this->lastSection)
+		{
+			$query->where("ngp_section={$this->lastSection->getID()} OR ngp_urgent");
+		}
+		$query->orderDESC("RAND() * (urgent_score + reveal_score + creator_score + fresh_score + upvote_score + comment_score)");
 		$query->first();
 		if ($post = $query->exec()->fetchObject())
 		{

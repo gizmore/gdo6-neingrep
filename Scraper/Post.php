@@ -62,6 +62,11 @@ final class Post extends Scraper
 		$total = $p['total'];
 		$opid = $p['opUserId'];
 		
+		if (!$opid)
+		{
+			Logger::logCron("Error: Hidden reveal does not work!");
+		}
+		
 		$worthy = false;
 		
 		$ref = null;
@@ -118,16 +123,34 @@ final class Post extends Scraper
 			Logger::logCron("Checking hidden OPID...");
 			if ($op = NG_User::getBy('ngu_uid', $opid))
 			{
-				Logger::logCron("Found OP!");
-				$post->saveVar('ngp_creator', $op->getID());
+				$revealed = !NG_PostCommented::hasCommented($op, $post);
+				if ($revealed)
+				{
+					Logger::logCron("Revealed a hidden OP!");
+				}
+				else
+				{
+					Logger::logCron("Found OP");
+				}
+				$post->setVars(array(
+					'ngp_uid' => null,
+					'ngp_creator' => $op->getID(),
+					'ngp_revealed' => $revealed ? Time::getDate() : null,
+					'ngp_urgent' => '0',
+				));
+			}
+			else
+			{
+				$post->setVar('ngp_uid', $opid);
 			}
 		}
 		
-		$post->saveVars(array(
+		$post->setVars(array(
 			'ngp_comment_ref' => $p['hasNext'] ? $ref : null,
 			'ngp_comments' => $total,
 		));
 		
+		$post->save();
 	}
 
 }
