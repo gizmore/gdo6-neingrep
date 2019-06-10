@@ -123,7 +123,7 @@ final class User extends Scraper
 		$cursor = $nPosts ? $json['data']['nextCursor'] : null;
 		foreach ($posts as $data)
 		{
-			$created = $worthy = false;
+			$created = false;
 			$post = NG_Post::getOrCreate($data, $created);
 			
 			if ($front && (!$created))

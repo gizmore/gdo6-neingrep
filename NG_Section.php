@@ -29,6 +29,12 @@ final class NG_Section extends GDO
 	public function getName() { return $this->getVar('ngs_name'); }
 	public function getTitle() { return $this->getVar('ngs_title'); }
 	
+	public function hasParticipated(NG_User $user)
+	{
+		return NG_Post::table()->countWhere("ngp_section={$this->getID()} AND ngp_creator={$user->getID()}") ||
+		       NG_Comment::table()->select('COUNT(*)')->joinObject('ngc_post')->where("ngp_section={$this->getID()} AND ngc_user={$user->getID()}")->exec()->fetchValue();
+	}
+	
 	##############
 	### Render ###
 	##############

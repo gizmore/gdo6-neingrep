@@ -49,6 +49,12 @@ final class Server
 		# Create first section
 		NG_Section::getOrCreateSection('default', 'Hot');
 		
+		if (in_array('--fix-stats', $this->argv, true))
+		{
+			$this->recalculateSectionStats();
+			die();
+		}
+		
 		$this->recalculateStats();
 		
 		Warmup::make()->scrapeWarmup();
@@ -78,13 +84,14 @@ final class Server
 		$urgent = number_format(NG_Post::table()->countWhere("ngp_urgent"));
 		$known = number_format(NG_Post::table()->countWhere('ngp_creator IS NOT NULL'));
 		$revealed = number_format(NG_Post::table()->countWhere('ngp_revealed IS NOT NULL'));
+		$partial = number_format(NG_Post::table()->countWhere('ngp_uid IS NOT NULL'));
 		$ups = number_format(NG_Post::table()->select('SUM(ngp_upvotes)')->exec()->fetchValue());
 		$comments = number_format(NG_Comment::table()->countWhere());
 		$totalcomments = number_format(NG_Post::table()->select('SUM(ngp_comments)')->exec()->fetchValue());
 		$likes = number_format(NG_Comment::table()->select('SUM(ngc_likes)')->exec()->fetchValue());
 		
 		Logger::logCron("$requests Requests. $users User.");
-		Logger::logCron("$posts posts - $known OPs identified - $revealed OPs revealed. $urgent urgent posts queued.");
+		Logger::logCron("$posts posts - $known OPs identified - $partial OPs partially - $revealed OPs revealed. $urgent urgent posts queued.");
 		Logger::logCron("$ups ups. $comments comments of $totalcomments loaded. $likes likes.");
 	}
 	
@@ -163,10 +170,26 @@ final class Server
 		$query->where("ngp_scraped IS NULL OR ngp_scraped<'$cut'");
 		if ($this->lastSection)
 		{
-			$query->where("ngp_section={$this->lastSection->getID()} OR ngp_urgent");
+			$query->where("ngp_section={$this->lastSection->getID()}");
 		}
+		else
+		{
+			# Filter sections
+			if ($banned_sections = join(', ', Module_NeinGrep::instance()->cfgBannedSections()))
+			{
+				$query->where("ngp_section NOT IN ($banned_sections)");
+			}
+			
+			# Filter sections
+			if ($allowed_sections = join(', ', Module_NeinGrep::instance()->cfgAllowedSections()))
+			{
+				$query->where("ngp_section IN ($allowed_sections)");
+			}
+		}
+
 		$query->orderDESC("RAND() * (urgent_score + reveal_score + creator_score + fresh_score + upvote_score + comment_score)");
 		$query->first();
+
 		if ($post = $query->exec()->fetchObject())
 		{
 			Post::make()->scrapePost($post);
@@ -228,5 +251,33 @@ final class Server
 		$subquery_postcount = "IFNULL( (SELECT COUNT(*) FROM ng_post WHERE ngp_section = s.ngs_id), 0 )";
 		$query = "UPDATE ng_section s SET ngs_posts = ( $subquery_postcount)";
 		Database::instance()->queryWrite($query);
+	}
+	
+	public function recalculateSectionStats()
+	{
+		Logger::logCron("Recalculating all stats. Takes a while...");
+		$users = NG_User::table();
+		$result = $users->select()->exec();
+		$count = 0;
+		while ($user = $users->fetch($result))
+		{
+			$this->recalculateUserSectionStats($user);
+			$count++;
+			if ( ($count % 500) === 0 )
+			{
+				Logger::logCron("$count users done...");
+			}
+		}
+	}
+	
+	public function recalculateUserSectionStats(NG_User $user)
+	{
+		foreach (NG_Section::table()->all() as $section)
+		{
+			if ($section->hasParticipated($user))
+			{
+				NG_UserSectionStats::updateStatistics($section, $user);
+			}
+		}
 	}
 }

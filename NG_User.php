@@ -31,7 +31,7 @@ final class NG_User extends GDO
 			GDT_UInt::make('ngu_downs')->notNull()->initial('0'), # total num downs (for posts)
 			GDT_UInt::make('ngu_comments')->notNull()->initial('0'), # total num comments
 			GDT_UInt::make('ngu_likes')->notNull()->initial('0'), # total num likes (for comments)
-			GDT_UInt::make('ngu_dislikes')->initial('0'), # total num dislikes (for comments)
+			GDT_UInt::make('ngu_dislikes')->notNull()->initial('0'), # total num dislikes (for comments)
 			GDT_String::make('ngu_cursor_posts_front')->ascii()->caseS(),
 			GDT_String::make('ngu_cursor_posts_back')->ascii()->caseS(),
 			GDT_String::make('ngu_cursor_comment_posts_front')->ascii()->caseS(),

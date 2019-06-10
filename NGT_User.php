@@ -27,6 +27,10 @@ final class NGT_User extends GDT_Object
 		{
 			return $this->gdo;
 		}
+		if ($this->gdo instanceof NG_UserSectionStats)
+		{
+			return $this->gdo->getUser();
+		}
 		return $this->getPost()->getUser();
 	}
 	
