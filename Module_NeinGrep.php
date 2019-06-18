@@ -5,6 +5,8 @@ use GDO\Core\GDO_Module;
 use GDO\DB\GDT_Float;
 use GDO\DB\GDT_UInt;
 use GDO\Form\GDT_Select;
+use GDO\UI\GDT_Bar;
+use GDO\UI\GDT_Link;
 
 /**
  * Scrapes 9gag.com for own statistic purposes.
@@ -53,5 +55,14 @@ final class Module_NeinGrep extends GDO_Module
 	public function cfgAllowedSections() { return $this->getConfigValue('ng_allowed_sections'); }
 	
 	public function increaseRequestCounter() { return $this->saveConfigVar('ng_request_count', $this->cfgRequestCount()+1); }
+	
+	#############
+	### Hooks ###
+	#############
+	public function hookTopBar(GDT_Bar $navbar)
+	{
+		$navbar->addField(GDT_Link::make('ng_link_add_post')->href(href('NeinGrep', 'AddPost')));
+		$navbar->addField(GDT_Link::make('ng_link_add_user')->href(href('NeinGrep', 'AddUser')));
+	}
 	
 }
