@@ -1,6 +1,7 @@
 <?php
 use GDO\UI\GDT_Panel;
 use GDO\NeinGrep\Module_NeinGrep;
+use GDO\NeinGrep\Method\Stats;
 
 echo Module_NeinGrep::instance()->templatePHP('page/admin_menu.php');
 
@@ -24,4 +25,7 @@ EOT;
 
 $box = GDT_Panel::withHTML($html);
 echo $box->render();
+
+
+echo Stats::make()->execute()->render();
 
