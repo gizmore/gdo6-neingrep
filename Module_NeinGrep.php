@@ -61,8 +61,9 @@ final class Module_NeinGrep extends GDO_Module
 	#############
 	public function hookTopBar(GDT_Bar $navbar)
 	{
-		$navbar->addField(GDT_Link::make('ng_link_add_post')->href(href('NeinGrep', 'AddPost')));
-		$navbar->addField(GDT_Link::make('ng_link_add_user')->href(href('NeinGrep', 'AddUser')));
+		$navbar->addField(GDT_Link::make('ng_link_welcome')->href(href('NeinGrep', 'Welcome')));
+// 		$navbar->addField(GDT_Link::make('ng_link_add_post')->href(href('NeinGrep', 'AddPost')));
+// 		$navbar->addField(GDT_Link::make('ng_link_add_user')->href(href('NeinGrep', 'AddUser')));
 	}
 	
 }

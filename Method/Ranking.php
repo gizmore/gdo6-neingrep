@@ -36,7 +36,10 @@ final class Ranking extends MethodQueryTable
 		$users = NG_User::table();
 		$table = NG_UserSectionStats::table();
 		$query = $table->select('*, ng_user.*')->joinObject('nguss_user')->fetchTable($users);
-		$query->where("nguss_section = {$section->getID()}");
+		if ($section->getID() > 1)
+		{
+			$query->where("nguss_section = {$section->getID()}");
+		}
 		return $query;
 	}
 	
@@ -69,8 +72,10 @@ final class Ranking extends MethodQueryTable
 	public function execute()
 	{
 		$form = $this->getForm();
+		$menu = $this->templatePHP('page/admin_menu.php');
+		$info = $this->templatePHP('page/ranking.php');
 		$response = GDT_Response::makeWith($form);
-		return $response->add(parent::execute());
+		return $menu->add($info)->add($response)->add(parent::execute());
 	}
 
 	

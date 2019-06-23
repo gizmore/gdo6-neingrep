@@ -16,6 +16,7 @@ final class AddUser extends MethodForm
 	public function renderPage()
 	{
 		$menu = $this->templatePHP('page/admin_menu.php');
+		$info = $this->templatePHP('page/add_user.php');
 		return $menu->add(parent::renderPage());
 	}
 	

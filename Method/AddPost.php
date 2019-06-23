@@ -23,10 +23,13 @@ use GDO\Core\GDT_Error;
  */
 final class AddPost extends MethodForm
 {
+	public function isUserRequired() { return false; }
+	
 	public function renderPage()
 	{
 		$menu = $this->templatePHP('page/admin_menu.php');
-		return $menu->add(parent::renderPage());
+		$info = $this->templatePHP('page/add_post.php');
+		return $menu->add($info)->add(parent::renderPage());
 	}
 	
 	public function createForm(GDT_Form $form)

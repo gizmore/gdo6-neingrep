@@ -6,7 +6,7 @@ use GDO\UI\GDT_Link;
 
 final class NGT_User extends GDT_Object
 {
-	public function defaultLabel() { return $this->label('ngu_name'); }
+	public function defaultLabel() { return $this->label('user_name'); }
 	
 	public function __construct()
 	{

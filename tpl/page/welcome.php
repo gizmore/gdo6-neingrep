@@ -1,5 +1,8 @@
 <?php
 use GDO\UI\GDT_Panel;
+use GDO\NeinGrep\Module_NeinGrep;
+
+echo Module_NeinGrep::instance()->templatePHP('page/admin_menu.php');
 
 $html = <<<EOT
 <h1>Hello Dear Internet Client</h1>

@@ -21,11 +21,11 @@ final class Posts extends MethodQueryTable
 			NGT_Post::make(),
 			NGT_User::make('ngu_name'),
 			NGT_Section::make('ngs_name'),
-			$table->gdoColumn('ngp_created'),
+			$table->gdoColumn('ngp_title'),
 			$table->gdoColumn('ngp_comments'),
 			$table->gdoColumn('ngp_upvotes'),
 			$table->gdoColumn('ngp_downvotes'),
-			$table->gdoColumn('ngp_title'),
+			$table->gdoColumn('ngp_created'),
 		);
 	}
 	
@@ -33,4 +33,12 @@ final class Posts extends MethodQueryTable
 	{
 		return NG_Post::table()->select()->joinObject('ngp_creator', 'LEFT JOIN')->joinObject('ngp_section');
 	}
+	
+	public function execute()
+	{
+		$menu = $this->templatePHP('page/admin_menu.php');
+		$info = $this->templatePHP('page/posts.php');
+		return $menu->add($info)->add(parent::execute());
+	}
+	
 }
