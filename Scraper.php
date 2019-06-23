@@ -72,4 +72,10 @@ class Scraper
 		return HTTP::pageExists($url);
 	}
 	
+	public function scrapePostExists(string $post_id)
+	{
+		$url = $this->neinURL() . "gag/" . $post_id;
+		return HTTP::pageExists($url);
+	}
+		
 }
