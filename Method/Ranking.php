@@ -36,10 +36,7 @@ final class Ranking extends MethodQueryTable
 		$users = NG_User::table();
 		$table = NG_UserSectionStats::table();
 		$query = $table->select('*, ng_user.*')->joinObject('nguss_user')->fetchTable($users);
-		if ($section->getID() > 1)
-		{
-			$query->where("nguss_section = {$section->getID()}");
-		}
+		$query->where("nguss_section = {$section->getID()}");
 		return $query;
 	}
 	
