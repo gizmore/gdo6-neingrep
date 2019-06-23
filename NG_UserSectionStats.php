@@ -16,7 +16,7 @@ final class NG_UserSectionStats extends GDO
 	public function gdoColumns()
 	{
 		return array(
-			GDT_Object::make('nguss_section')->table(NG_User::table())->notNull()->primary()->cascade()->index(),
+			GDT_Object::make('nguss_section')->table(NG_Section::table())->notNull()->primary()->cascade()->index(),
 			GDT_Object::make('nguss_user')->table(NG_User::table())->notNull()->primary()->cascade(),
 			GDT_UInt::make('nguss_posts')->notNull()->initial('0'),
 			GDT_UInt::make('nguss_ups')->notNull()->initial('0'),
