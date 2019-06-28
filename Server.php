@@ -259,11 +259,13 @@ final class Server
 	 */
 	public function scrapeRevealEasy()
 	{
+		Logger::logCron("Try hidden ops.");
 		$table = NG_Post::table();
 		$query = $table->update();
 		$query->set("ngp_uid = IF( (SELECT ngu_id FROM ng_user WHERE ngu_uid = ngp_uid), NULL, ngp_uid )");
 		$query->set("ngp_creator = IFNULL ( (SELECT ngp_id FROM ng_user WHERE ngu_uid = ngp_uid), NULL )");
 		$query->where("ngp_uid IS NOT NULL");
+		$query->where("ngp_creator IS NULL");
 		$query->exec();
 		$count = Database::instance()->affectedRows();
 		Logger::logCron("Found $count hidden ops.");
