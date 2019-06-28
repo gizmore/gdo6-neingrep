@@ -9,6 +9,7 @@ use GDO\DB\GDT_String;
 use GDO\Address\GDT_Address;
 use GDO\DB\GDT_UInt;
 use GDO\Date\GDT_DateTime;
+use GDO\DB\GDT_Checkbox;
 use GDO\DB\GDT_CreatedAt;
 use GDO\DB\GDT_CreatedBy;
 use GDO\User\GDO_User;
@@ -26,6 +27,7 @@ final class NG_User extends GDO
 			GDT_String::make('ngu_uid')->ascii()->caseS()->max(24),
 			GDT_Address::make('ngu_address'),
 			GDT_DateTime::make('ngu_last_active'), # last time active on 9gag
+			GDT_Checkbox::make('ngu_urgent')->notNull()->initial('0'),
 			GDT_UInt::make('ngu_posts')->notNull()->initial('0'), # total num posts
 			GDT_UInt::make('ngu_ups')->notNull()->initial('0'), # total num ups (for posts)
 			GDT_UInt::make('ngu_downs')->notNull()->initial('0'), # total num downs (for posts)
@@ -37,6 +39,8 @@ final class NG_User extends GDO
 			GDT_String::make('ngu_cursor_comment_posts_front')->ascii()->caseS(),
 			GDT_String::make('ngu_cursor_comment_posts_back')->ascii()->caseS(),
 			GDT_DateTime::make('ngu_scraped'), # last time scraped
+			GDT_Checkbox::make('ngu_scrape_finished_posts')->notNull()->initial('0'),
+			GDT_Checkbox::make('ngu_scrape_finished_comments')->notNull()->initial('0'),
 			GDT_CreatedAt::make('ngu_created'),
 			GDT_CreatedBy::make('ngu_creator'),
 		);
@@ -46,6 +50,9 @@ final class NG_User extends GDO
 	public function displayName() { return html($this->getVar('ngu_name')); }
 	
 	public function hrefProfile() { return "https://9gag.com/u/" . urlencode($this->getName()); }
+	
+	public function isFinishedPosts() { return $this->getValue('ngu_scrape_finished_posts'); }
+	public function isFinishedComments() { return $this->getValue('ngu_scrape_finished_comments'); }
 	
 	public function renderCell() { return $this->displayName(); }
 	

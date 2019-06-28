@@ -84,10 +84,12 @@ final class AddPost extends MethodForm
 			}
 			else
 			{
-				if (Scraper::make()->scrapePostExists($id))
+				if ($section = Scraper::make()->scrapePostExists($id))
 				{
 					NG_Post::blank(array(
-						
+						'ngp_nid' => $id,
+						'ngp_urgent' => '1',
+						'ngp_section' => $section,
 					))->insert();
 					$response = parent::renderPage();
 					$success = GDT_Success::responseWith('msg_9gag_op_urgent');

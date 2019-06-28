@@ -15,7 +15,7 @@ final class Stats extends Method
 			'requests' => number_format(Module_NeinGrep::instance()->cfgRequestCount()),
 			'users' => number_format(NG_User::table()->countWhere()),
 			'posts' => number_format(NG_Post::table()->countWhere()),
-			'urgent' => number_format(NG_Post::table()->countWhere("ngp_urgent")),
+			'urgent' => number_format(NG_Post::table()->countWhere("ngp_urgent > 0")),
 			'known' => number_format(NG_Post::table()->countWhere('ngp_creator IS NOT NULL')),
 			'revealed' => number_format(NG_Post::table()->countWhere('ngp_revealed IS NOT NULL')),
 			'partial' => number_format(NG_Post::table()->countWhere('ngp_uid IS NOT NULL')),

@@ -1,14 +1,14 @@
 # gdo6-neingrep
+
 9Gag scraping project implemented as gdo6 module.
+A live site is available at https://neingrep.gizmore.org
+
 
 ## Install
 
-See gizmore/gdo6
+See https://github.com/gizmore/gdo6
+
 
 ## License
 
-properitary
-
-### Notes
-
-At least you gotta see the source
+This module is properitary.

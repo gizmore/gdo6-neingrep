@@ -18,6 +18,8 @@ use GDO\NeinGrep\Scraper\Geotag;
  */
 final class Server
 {
+	private $hot; # The default section. I name it hot even tho we look in fresh.
+	
 	public static function make(int $argc, array $argv)
 	{
 		$instance = new self($argc, $argv);
@@ -35,7 +37,6 @@ final class Server
 	
 	private $system;
 	private $module;
-	private $lastSection = null;
 	
 	public function init()
 	{
@@ -47,7 +48,7 @@ final class Server
 	public function run()
 	{
 		# Create first section
-		NG_Section::getOrCreateSection('default', 'Hot');
+		$this->hot = NG_Section::getOrCreateSection('default', 'Hot');
 		
 		if (in_array('--fix-stats', $this->argv, true))
 		{
@@ -63,11 +64,11 @@ final class Server
 		{
 			$this->showStatistics();
 			
-			$this->scrapeNextSection();
-			$this->scrapeNextPost();
-			$this->scrapeNextUser();
-// 			$this->scrapeNextGeotag();
-			$this->scrapeRevealEasy();
+			$section = $this->scrapeNextSection();
+			$this->scrapeNextPost($section); # Scrape a next random post.
+			$this->scrapeNextUser(); # scrape user posts and posts where he commented
+// 			$this->scrapeNextGeotag(); # not working
+			$this->scrapeRevealEasy(); # easy revealer for awaiting reveal
 			
 			$this->recalculateStats();
 
@@ -102,12 +103,20 @@ final class Server
 	
 	public function scrapeNextUser()
 	{
-		$query = NG_User::table()->select();
+		$query = NG_User::table()->select('*');
+
+		# Scrape cut by time
 		$cut = Time::getDate(time() - $this->scrapeUserTimeout());
 		$query->where("ngu_scraped IS NULL OR ngu_scraped<'$cut'");
-		$query->order("RAND()");
-		$query->order("IF(ngu_creator={$this->system}, 1, 0)");
+
+		# Scored order
+		$query->select("IF(ngu_urgent=1 AND (ngu_scrape_finished_posts=0 OR ngu_scrape_finished_comments=0) , 5000, 0) urgent_score");
+		$query->select("IF(ngu_creator={$this->system}, 0, 100) system_score"); # basescore for user created users
+		$query->select("IF(ngu_scrape_finished_posts=0 OR ngu_scrape_finished_comments=0, 0, 500) finish_score"); # unfinished users
+		$query->orderDESC("RAND() * (urgent_score + system_score + finish_score)");
+		
 		$query->first();
+
 		if ($user = $query->exec()->fetchObject())
 		{
 			return User::make()->scrapeUser($user);
@@ -119,10 +128,20 @@ final class Server
 		return 600;
 	}
 	
-	public function scrapeNextSection()
+	/**
+	 * Get the next random section to scrape.
+	 * @param bool $front
+	 * @return \GDO\NeinGrep\NG_Section
+	 */
+	public function getNextRandomSection(bool $front)
 	{
+		if ($front && Module_NeinGrep::instance()->cfgOnlyFresh())
+		{
+			return $this->hot;
+		}
+		
 		$query = NG_Section::table()->select();
-		$query->order('RAND()')->order('ngs_scraped');
+		$query->order('RAND()');
 		
 		# Filter scraped
 		$cut = Time::getDate(time() - $this->scrapeSectionTimeout());
@@ -139,13 +158,37 @@ final class Server
 		{
 			$query->where("ngs_id IN ($allowed_sections)");
 		}
-		
-		# Scrape
+
 		$query->first();
-		if ($this->lastSection = $query->exec()->fetchObject())
+		return $query->exec()->fetchObject();
+	}
+	
+	private $cycle = -1;
+	
+	/**
+	 * Scrape a section from front and from backpointer (older posts).
+	 */
+	public function scrapeNextSection()
+	{
+		$this->cycle++;
+		$fresh = Module_NeinGrep::instance()->cfgOnlyFresh();
+		
+		# Get both sections to scrape.
+		$front = $this->getNextRandomSection(true);
+		
+		$back = $fresh ? $this->getNextRandomSection(false) : $front;
+		
+// 		$this->lastSection = $back; # remember current section for?
+		
+		# Scrape posts
+		$scraper = Section::make();
+		if ( ($fresh) && ((($this->cycle%2)===0)) )
 		{
-			Section::make()->scrapeSection($this->lastSection);
+			$scraper->scrapeSectionFront($front);
 		}
+		$scraper->scrapeSectionBack($back);
+		
+		return $back;
 	}
 	
 	public function scrapePostTimeout()
@@ -156,21 +199,21 @@ final class Server
 	/**
 	 * Find next post by a scoring algo and call post scraper.
 	 */
-	public function scrapeNextPost()
+	public function scrapeNextPost(NG_Section $section=null)
 	{
 		Logger::logCron("Scraping next post.");
 		$query = NG_Post::table()->select('*');
-		$query->select('IF(ngp_urgent, 5000, 0) urgent_score');
-		$query->select('IF(ngp_uid IS NOT NULL, 50, 0) reveal_score');
-		$query->select('IF(ngp_creator IS NULL, 50, 0) creator_score');
+		$query->select('IF(ngp_urgent, 5000, 0) urgent_score'); # urgent posts are scored high
+		$query->select('IF(ngp_uid IS NOT NULL AND ngp_creator IS NULL, 250, 0) reveal_score'); # a post with a possible reveal
+		$query->select('IF(ngp_creator IS NULL, 100, 0) creator_score'); # unknown op
 		$query->select('IF(ngp_scraped IS NULL, 50, 0) fresh_score');
 		$query->select('LEAST(ngp_upvotes/5, 20) upvote_score');
 		$query->select('LEAST(ngp_comments/5, 35) comment_score');
 		$cut = Time::getDate(time()-$this->scrapePostTimeout());
 		$query->where("ngp_scraped IS NULL OR ngp_scraped<'$cut'");
-		if ($this->lastSection)
+		if ($section)
 		{
-			$query->where("ngp_section={$this->lastSection->getID()}");
+			$query->where("ngp_section={$section->getID()}");
 		}
 		else
 		{

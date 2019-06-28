@@ -8,6 +8,7 @@ use GDO\Util\Strings;
 use GDO\Date\GDT_DateTime;
 use GDO\Core\Logger;
 use GDO\DB\GDT_UInt;
+use GDO\DB\GDT_Checkbox;
 
 final class NG_Section extends GDO
 {
@@ -23,11 +24,13 @@ final class NG_Section extends GDO
 			GDT_String::make('ngs_cursor_front')->max(128)->ascii()->caseS(),
 			GDT_String::make('ngs_cursor_back')->max(128)->ascii()->caseS(),
 			GDT_DateTime::make('ngs_scraped'),
+			GDT_Checkbox::make('ngs_scrape_finished')->notNull()->initial('0'),
 		);
 	}
 	
 	public function getName() { return $this->getVar('ngs_name'); }
 	public function getTitle() { return $this->getVar('ngs_title'); }
+	public function isFinished() { return $this->getValue('ngs_scrape_finished'); }
 	
 	public function hasParticipated(NG_User $user)
 	{

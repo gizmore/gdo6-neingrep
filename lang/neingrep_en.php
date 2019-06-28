@@ -9,7 +9,10 @@ return array(
 	
 	# Add Post
 	'ft_neingrep_addpost' => 'Add Post to reveal OP',
-	
+	'msg_9gag_op_revealed' => 'The OP is known to us. <a href="%2$s">%1$s</a>',
+	'msg_9gag_op_urgent' => 'This post has now been put into urgent mode.',
+	'err_no_9gag_post' => 'This is no post on 9gag. try to submit the correct url.',
+
 	# Ranking
 	'nguss_posts' => 'Posts',
 	'nguss_comments' => 'Comments',
@@ -24,4 +27,5 @@ return array(
 	'ngp_upvotes' => 'UPs',
 	'ngp_downvotes' => 'Downs',
 	'ngp_title' => 'Post Title',
+	
 );

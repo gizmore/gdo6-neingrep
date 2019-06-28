@@ -14,24 +14,50 @@ use GDO\Net\HTTP;
  */
 final class Section extends Scraper
 {
+	/**
+	 * Scrape a section from front and from old back pointer.
+	 * Old strategy which did not use fresh as only front pointer.
+	 * You can re-enable this old strategy viy cfg_ng_scrape_fresh_only=false.
+	 * 
+	 * @param NG_Section $section
+	 * @deprecated
+	 */
 	public function scrapeSection(NG_Section $section)
 	{
+		$this->scrapeSectionFront($section);
+		$this->scrapeSectionBack($section);
+	}
+	
+	/**
+	 * Scrape section from beginning / newest posts.
+	 * @param NG_Section $section
+	 */
+	public function scrapeSectionFront(NG_Section $section)
+	{
 		$this->scrapeSectionB($section, true);
+	}
+	
+	/**
+	 * Scrape older posts of a section.
+	 * @param NG_Section $section
+	 */
+	public function scrapeSectionBack(NG_Section $section)
+	{
 		$this->scrapeSectionB($section, false);
 	}
-
-	public function scrapeSectionB(NG_Section $section, bool $front)
+	
+	public function scrapeSectionB(NG_Section $section, bool $front, $subsection='fresh')
 	{
 		$column = $front ? 'ngs_cursor_front' : 'ngs_cursor_back';
 		$cursor = $section->getVar($column);
 		
-		if ($front && ($section->getVar('ngs_cursor_back') === null))
+		# Back cursor and finished
+		if ( (!$front) && ($section->isFinished()) )
 		{
 			return true;
 		}
 		
 		$nextCursor = $cursor ? "?{$cursor}" : '';
-		$subsection = 'fresh';
 		Logger::logCron("Scraping section {$section->getTitle()}... via {$section->getName()} {$subsection} {$nextCursor}");
 
 		$this->beforeRequest();
@@ -45,7 +71,7 @@ final class Section extends Scraper
 			if ($json['meta']['errorMessage'] === 'Invalid group')
 			{
 				Logger::logCron("deleting section {$section->getTitle()}");
-				$section->delete();
+// 				$section->delete(); # Better keep records :)
 				return false;
 			}
 		}
@@ -74,7 +100,11 @@ final class Section extends Scraper
 		
 		if (@$json['data']['nextCursor'])
 		{
-			$cursor = $json['data']['nextCursor'];
+			$cursor = $crsr = $json['data']['nextCursor']; # cursor for reference, crsr may change to allow nice front/back- pointer handling.
+		}
+		elseif (!$cursor) # last page
+		{
+			$section->saveVar('ngs_scrape_finished', '1');
 		}
 		
 		foreach ($posts as $data)
@@ -91,13 +121,26 @@ final class Section extends Scraper
 			
 			if ($front && (!$created))
 			{
-				Logger::logCron("Section front cursor nulled.");
-				$cursor = null;
+				Logger::logCron("Section front cursor nulled as we reached a known post.");
+				$crsr = null;
+			}
+		}
+		
+		# If we are a front request and have no back cursor yet =>
+		# Make the back cursor our result.
+		if ($front && (!$section->getVar('ngs_cursor_back')))
+		{
+			if (!$section->isFinished())
+			{
+				$section->saveVars(array(
+					'ngs_cursor_back' => $cursor, # back cursor is page 2
+				));
+				$crsr = null; # front restarts fresh
 			}
 		}
 		
 		$section->saveVars(array(
-			$column => $cursor,
+			$column => $crsr,
 			'ngs_scraped' => Time::getDate(),
 		));
 	}
