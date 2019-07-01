@@ -14,6 +14,7 @@ use GDO\NeinGrep\NG_Post;
 use GDO\Core\GDT_Success;
 use GDO\NeinGrep\Scraper;
 use GDO\Core\GDT_Error;
+use GDO\Captcha\GDT_Captcha;
 
 /**
  * Add a post manually.

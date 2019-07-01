@@ -56,9 +56,11 @@ final class NG_Section extends GDO
 	public static function getOrCreate(array $data)
 	{
 		$url = $data['url'];
-		$name = self::getNameFromURL($url);
-		$title = $data['name'];
-		return self::getOrCreateSection($name, $title);
+		if ($name = self::getNameFromURL($url))
+		{
+			$title = $data['name'];
+			return self::getOrCreateSection($name, $title);
+		}
 	}
 	
 	public static function getOrCreateSection($name, $title='')

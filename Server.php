@@ -62,6 +62,7 @@ final class Server
 		
 		while (true)
 		{
+			$this->cycle++;
 			$this->showStatistics();
 			
 			$section = $this->scrapeNextSection();
@@ -170,7 +171,6 @@ final class Server
 	 */
 	public function scrapeNextSection()
 	{
-		$this->cycle++;
 		$fresh = Module_NeinGrep::instance()->cfgOnlyFresh();
 		
 		# Get both sections to scrape.
@@ -256,19 +256,24 @@ final class Server
 	
 	/**
 	 * Assign meanwhile known OPs.
+	 * Slow as hell!
 	 */
 	public function scrapeRevealEasy()
 	{
-		Logger::logCron("Try hidden ops.");
-		$table = NG_Post::table();
-		$query = $table->update();
-		$query->set("ngp_uid = IF( (SELECT ngu_id FROM ng_user WHERE ngu_uid = ngp_uid), NULL, ngp_uid )");
-		$query->set("ngp_creator = IFNULL ( (SELECT ngp_id FROM ng_user WHERE ngu_uid = ngp_uid), NULL )");
-		$query->where("ngp_uid IS NOT NULL");
-		$query->where("ngp_creator IS NULL");
-		$query->exec();
-		$count = Database::instance()->affectedRows();
-		Logger::logCron("Found $count hidden ops.");
+		if ( ($this->cycle%50) === 0 ) # only once in a while...
+		{
+			Logger::logCron("Try hidden ops.");
+			$table = NG_Post::table();
+			$query = $table->update();
+			$query->set("ngp_uid = IF( (SELECT ngu_id FROM ng_user WHERE ngu_uid = ngp_uid), NULL, ngp_uid )");
+			$query->set("ngp_creator = IFNULL ( (SELECT ngp_id FROM ng_user WHERE ngu_uid = ngp_uid), NULL )");
+			$query->where("ngp_uid IS NOT NULL");
+			$query->where("ngp_creator IS NULL");
+// 			$query->debug();
+			$query->exec();
+			$count = Database::instance()->affectedRows();
+			Logger::logCron("Found $count hidden ops.");
+		}
 	}
 	
 	/**

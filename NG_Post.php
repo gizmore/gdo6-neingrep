@@ -80,23 +80,24 @@ final class NG_Post extends GDO
 		$created = false;
 		if (!($post = self::getBy('ngp_nid', $data['id'])))
 		{
-			$section = NG_Section::getOrCreate($data['postSection']);
-			
-			$post = self::blank(array(
-				'ngp_nid' => $data['id'],
-				'ngp_section' => $section->getID(),
-				'ngp_title' => html_entity_decode($data['title'], ENT_QUOTES|ENT_HTML5),
-				'ngp_nsfw' => $data['nsfw']?'1':'0',
-			));
-			
-			if (@$data['images']['image700'])
+			if ($section = NG_Section::getOrCreate($data['postSection']))
 			{
-				$post->setVar('ngp_image', $data['images']['image700']['url']);
+				$post = self::blank(array(
+					'ngp_nid' => $data['id'],
+					'ngp_section' => $section->getID(),
+					'ngp_title' => html_entity_decode($data['title'], ENT_QUOTES|ENT_HTML5),
+					'ngp_nsfw' => $data['nsfw']?'1':'0',
+				));
+				
+				if (@$data['images']['image700'])
+				{
+					$post->setVar('ngp_image', $data['images']['image700']['url']);
+				}
+				
+				$post->insert();
+				$created = true;
+				Logger::logCron("New NG_Post in {$section->getTitle()}");
 			}
-			
-			$post->insert();
-			$created = true;
-			Logger::logCron("New NG_Post in {$section->getTitle()}");
 		}
 		return $post;
 	}

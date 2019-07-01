@@ -110,19 +110,21 @@ final class Section extends Scraper
 		foreach ($posts as $data)
 		{
 			$created = $worthy = false;
-			$post = NG_Post::getOrCreate($data, $created);
 			
-			$post->saveVars(array(
-				'ngp_comments' => $data['commentsCount'],
-				'ngp_upvotes' => $data['upVoteCount'],
-				'ngp_downvotes' => $data['downVoteCount'],
-				'ngp_created' => Time::getDate($data['creationTs']),
-			), true, $worthy);
-			
-			if ($front && (!$created))
+			if ($post = NG_Post::getOrCreate($data, $created))
 			{
-				Logger::logCron("Section front cursor nulled as we reached a known post.");
-				$crsr = null;
+				$post->saveVars(array(
+					'ngp_comments' => $data['commentsCount'],
+					'ngp_upvotes' => $data['upVoteCount'],
+					'ngp_downvotes' => $data['downVoteCount'],
+					'ngp_created' => Time::getDate($data['creationTs']),
+				), true, $worthy);
+				
+				if ($front && (!$created))
+				{
+					Logger::logCron("Section front cursor nulled as we reached a known post.");
+					$crsr = null;
+				}
 			}
 		}
 		
