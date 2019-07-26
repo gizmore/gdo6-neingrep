@@ -17,9 +17,14 @@ use GDO\DB\GDT_Checkbox;
  */
 final class Module_NeinGrep extends GDO_Module
 {
+	public $module_priority = 96;
+	public function isSiteModule() { return true; }
+	
 	public function onLoadLanguage() { return $this->loadLanguage('lang/neingrep'); }
 	
 	public function href_administrate_module() { return href('NeinGrep', 'Admin'); }
+	
+	public function getDependencies() { return ['Material', 'JQuery', 'File', 'Captcha', 'Admin', 'Account', 'Profile', 'Contact', 'News', 'Login', 'Address']; }
 	
 	public function getClasses()
 	{
