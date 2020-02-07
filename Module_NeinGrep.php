@@ -17,6 +17,7 @@ use GDO\DB\GDT_Checkbox;
  */
 final class Module_NeinGrep extends GDO_Module
 {
+	public $module_license = 'properitary';
 	public $module_priority = 96;
 	public function isSiteModule() { return true; }
 	
